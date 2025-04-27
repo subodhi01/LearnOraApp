@@ -8,6 +8,7 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
+import LearningPlans from './components/LearningPlans/LearningPlans';
 import './App.css';
 
 // Add Font Awesome
@@ -71,6 +72,7 @@ function App() {
                 <Route path="settings" element={<Settings />} />
                 {/* Add more dashboard routes as needed */}
               </Route>
+              <Route path="/learning-plans" element={<LearningPlans />} />
               {/* Add more routes as needed */}
             </Routes>
           </main>
