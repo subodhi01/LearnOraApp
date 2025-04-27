@@ -1,0 +1,230 @@
+.progress-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.progress-container h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.instructions {
+  background-color: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.instructions h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.instructions ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.instructions li {
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.create-template-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.create-template-btn:hover {
+  background-color: #45a049;
+}
+
+.template-form {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.template-form h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.course-selection {
+  margin-bottom: 2rem;
+}
+
+.course-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.course-item input[type="checkbox"] {
+  margin-right: 1rem;
+  margin-top: 0.5rem;
+}
+
+.course-item label {
+  flex: 1;
+}
+
+.course-item h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+}
+
+.course-item p {
+  margin: 0;
+  color: #666;
+}
+
+.timeline-section {
+  margin-bottom: 2rem;
+}
+
+.timeline-section select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-note {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.description-section {
+  margin-bottom: 2rem;
+}
+
+.description-section textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.create-btn, .cancel-btn {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.create-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.create-btn:hover {
+  background-color: #45a049;
+}
+
+.cancel-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #da190b;
+}
+
+.templates-list {
+  margin-top: 3rem;
+}
+
+.templates-list h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.template-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.template-header h3 {
+  color: #2c3e50;
+  margin: 0;
+}
+
+.update-btn {
+  background-color: #2196F3;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.update-btn:hover {
+  background-color: #1976D2;
+}
+
+.template-courses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.course-card {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.course-card h4 {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+}
+
+.course-card p {
+  color: #666;
+  margin: 0;
+}
+
+.template-timeline {
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.template-description {
+  color: #555;
+  font-style: italic;
+} 

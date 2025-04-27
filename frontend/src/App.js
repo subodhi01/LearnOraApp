@@ -8,6 +8,7 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
+import Progress from './components/Progress';
 //import AddLearningPlan from './learningplan/AddLearningPlan';
 import './App.css';
 
@@ -91,6 +92,7 @@ function App() {
                   <Route index element={<Navigate to="overview" replace />} />
                   <Route path="overview" element={<div>Overview Content</div>} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="progress" element={<Progress />} />
                 </Route>
               </Routes>
             </main>
