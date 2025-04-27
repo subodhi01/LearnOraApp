@@ -5,7 +5,7 @@ import './Header.css';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -29,7 +29,7 @@ const Header = () => {
         </nav>
 
         <div className="auth-section">
-          {isAuthenticated ? (
+          {user ? (
             <div className="user-menu">
               <div className="user-avatar">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
@@ -63,4 +63,4 @@ const Header = () => {
   );
 };
 
-export default Header; 
+export default Header;

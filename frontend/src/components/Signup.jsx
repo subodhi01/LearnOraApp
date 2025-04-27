@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import './Signup.css';
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -59,42 +58,21 @@ const Signup = () => {
     
     if (validateForm()) {
       try {
-        const response = await fetch('http://localhost:8000/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            password: formData.password
-          })
+        await axios.post('http://localhost:8000/api/auth/signup', {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password
         });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data || 'An error occurred during signup');
-        }
-
-        // Use the login function from AuthContext
-        login(data.token, {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email
-        });
-        
-        navigate('/dashboard');
+        navigate('/login');
       } catch (error) {
         console.error('Signup error:', error);
-        setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
+        setErrors({ submit: error.response?.data || 'An unexpected error occurred. Please try again.' });
       }
     }
   };
 
   const handleOAuthSignup = (provider) => {
-    // TODO: Implement OAuth signup
     console.log(`Signing up with ${provider}`);
   };
 
@@ -191,6 +169,12 @@ const Signup = () => {
             {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
           </div>
 
+          {errors.submit && (
+            <div className="error-message submit-error">
+              {errors.submit}
+            </div>
+          )}
+
           <button type="submit" className="signup-button">
             Create Account
           </button>
@@ -204,4 +188,4 @@ const Signup = () => {
   );
 };
 
-export default Signup; 
+export default Signup;
