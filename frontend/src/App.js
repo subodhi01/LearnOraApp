@@ -8,6 +8,7 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
+import Community from './components/Community';
 import './App.css';
 
 // Add Font Awesome
@@ -82,6 +83,7 @@ function App() {
                     <ForgotPassword />
                   </PublicRoute>
                 } />
+                <Route path="/community" element={<Community />} />
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />

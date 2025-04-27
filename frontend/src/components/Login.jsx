@@ -49,6 +49,7 @@ const Login = () => {
         });
 
         login({
+          _id: response.data.id, // Include _id for comment userId
           firstName: response.data.firstName,
           lastName: response.data.lastName,
           email: response.data.email
