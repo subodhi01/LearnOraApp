@@ -1,6 +1,12 @@
 import React from 'react';
 import './LearningPlan.css';
 
+const calculateProgress = (plan) => {
+  if (!plan.topics || plan.topics.length === 0) return 0;
+  const completedTopics = plan.topics.filter(topic => topic.completed).length;
+  return Math.round((completedTopics / plan.topics.length) * 100);
+};
+
 const LearningPlanList = ({ 
   plans, 
   onSelectPlan, 
@@ -47,7 +53,7 @@ const LearningPlanList = ({
                     {plan.topics?.length || 0} Topics
                   </span>
                   <span className="plan-progress">
-                    Progress: {plan.progress || 0}%
+                    Progress: {calculateProgress(plan)}%
                   </span>
                 </div>
                 <div className="plan-timeline">
@@ -63,4 +69,4 @@ const LearningPlanList = ({
   );
 };
 
-export default LearningPlanList; 
+export default LearningPlanList;

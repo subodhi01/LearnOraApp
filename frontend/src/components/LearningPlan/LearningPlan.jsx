@@ -3,20 +3,20 @@ import './LearningPlan.css';
 import LearningPlanList from './LearningPlanList';
 import LearningPlanForm from './LearningPlanForm';
 import LearningPlanDetail from './LearningPlanDetail';
+import learningPlanService from '../../services/learningPlanService';
 
 const LearningPlan = () => {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const userEmail = 'user@example.com'; // TODO: Get from auth context or login
 
-  // Fetch learning plans
   useEffect(() => {
-    // TODO: Implement API call to fetch learning plans
     const fetchPlans = async () => {
       try {
-        // const response = await learningPlanService.getPlans();
-        // setPlans(response.data);
+        const plansData = await learningPlanService.getPlans(userEmail);
+        setPlans(plansData);
       } catch (error) {
         console.error('Error fetching learning plans:', error);
       }
@@ -24,31 +24,44 @@ const LearningPlan = () => {
     fetchPlans();
   }, []);
 
-  const handleCreatePlan = (newPlan) => {
-    // TODO: Implement API call to create plan
-    setPlans([...plans, newPlan]);
-    setIsCreating(false);
+  const handleCreatePlan = async (newPlan) => {
+    try {
+      const createdPlan = await learningPlanService.createPlan(userEmail, {
+        ...newPlan,
+        id: Date.now().toString(), // Temporary ID until backend assigns one
+      });
+      setPlans([...plans, createdPlan]);
+      setIsCreating(false);
+    } catch (error) {
+      console.error('Error creating plan:', error);
+    }
   };
 
-  const handleUpdatePlan = (updatedPlan) => {
-    // TODO: Implement API call to update plan
-    setPlans(plans.map(plan => 
-      plan.id === updatedPlan.id ? updatedPlan : plan
-    ));
-    setIsEditing(false);
-    setSelectedPlan(null);
-  };
-
-  const handleDeletePlan = (planId) => {
-    // TODO: Implement API call to delete plan
-    setPlans(plans.filter(plan => plan.id !== planId));
-    if (selectedPlan?.id === planId) {
+  const handleUpdatePlan = async (updatedPlan) => {
+    try {
+      const updated = await learningPlanService.updatePlan(updatedPlan.id, updatedPlan);
+      setPlans(plans.map(plan => (plan.id === updated.id ? updated : plan)));
+      setIsEditing(false);
       setSelectedPlan(null);
+    } catch (error) {
+      console.error('Error updating plan:', error);
+    }
+  };
+
+  const handleDeletePlan = async (planId) => {
+    try {
+      await learningPlanService.deletePlan(planId);
+      setPlans(plans.filter(plan => plan.id !== planId));
+      if (selectedPlan?.id === planId) {
+        setSelectedPlan(null);
+      }
+    } catch (error) {
+      console.error('Error deleting plan:', error);
     }
   };
 
   const handleSharePlan = (planId) => {
-    // TODO: Implement sharing functionality
+    // Implement sharing logic (e.g., generate shareable link)
     console.log('Sharing plan:', planId);
   };
 
