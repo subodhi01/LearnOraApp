@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import './Login.css';
 
 const Login = () => {
@@ -42,37 +43,26 @@ const Login = () => {
     
     if (validateForm()) {
       try {
-        const response = await fetch('http://localhost:8000/api/auth/signin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
+        const response = await axios.post('http://localhost:8000/api/auth/signin', {
+          email: formData.email,
+          password: formData.password
         });
 
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data || 'An error occurred during login');
-        }
-
-        // Use the login function from AuthContext
-        login(data.token, {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email
+        login({
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          email: response.data.email
         });
         
         navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
-        setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
+        setErrors({ submit: error.response?.data || 'An unexpected error occurred. Please try again.' });
       }
     }
   };
 
   const handleOAuthLogin = (provider) => {
-    // TODO: Implement OAuth login
     console.log(`Logging in with ${provider}`);
   };
 
@@ -157,4 +147,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;
