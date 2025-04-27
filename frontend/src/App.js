@@ -8,7 +8,7 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
-import AddLearningPlan from './learningplan/AddLearningPlan';
+//import AddLearningPlan from './learningplan/AddLearningPlan';
 import './App.css';
 
 // Add Font Awesome
