@@ -4,29 +4,32 @@ import LearningPlanList from './LearningPlanList';
 import LearningPlanForm from './LearningPlanForm';
 import LearningPlanDetail from './LearningPlanDetail';
 import learningPlanService from '../../services/learningPlanService';
+import { useAuth } from '../../context/AuthContext';
 
 const LearningPlan = () => {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const userEmail = 'user@example.com'; // TODO: Get from auth context or login
+  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const plansData = await learningPlanService.getPlans(userEmail);
-        setPlans(plansData);
-      } catch (error) {
-        console.error('Error fetching learning plans:', error);
-      }
-    };
-    fetchPlans();
-  }, []);
+    if (user?.email) {
+      const fetchPlans = async () => {
+        try {
+          const plansData = await learningPlanService.getPlans(user.email);
+          setPlans(plansData);
+        } catch (error) {
+          console.error('Error fetching learning plans:', error);
+        }
+      };
+      fetchPlans();
+    }
+  }, [user?.email]);
 
   const handleCreatePlan = async (newPlan) => {
     try {
-      const createdPlan = await learningPlanService.createPlan(userEmail, {
+      const createdPlan = await learningPlanService.createPlan(user.email, {
         ...newPlan,
         id: Date.now().toString(), // Temporary ID until backend assigns one
       });
@@ -39,7 +42,7 @@ const LearningPlan = () => {
 
   const handleUpdatePlan = async (updatedPlan) => {
     try {
-      const updated = await learningPlanService.updatePlan(updatedPlan.id, updatedPlan);
+      const updated = await learningPlanService.updatePlan(updatedPlan, user.email);
       setPlans(plans.map(plan => (plan.id === updated.id ? updated : plan)));
       setIsEditing(false);
       setSelectedPlan(null);
@@ -64,6 +67,10 @@ const LearningPlan = () => {
     // Implement sharing logic (e.g., generate shareable link)
     console.log('Sharing plan:', planId);
   };
+
+  if (!user?.email) {
+    return <div>Please log in to view your learning plans.</div>;
+  }
 
   return (
     <div className="learning-plan-container">

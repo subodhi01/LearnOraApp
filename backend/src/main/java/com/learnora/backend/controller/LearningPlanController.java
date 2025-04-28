@@ -46,8 +46,10 @@ public class LearningPlanController {
         }
     }
 
-    @PutMapping("/{planId}")
-    public ResponseEntity<?> updatePlan(@PathVariable String userEmail, @RequestBody LearningPlanModel plan) {
+    @PutMapping
+    public ResponseEntity<?> updatePlan(
+            @RequestParam String userEmail,
+            @RequestBody LearningPlanModel plan) {
         try {
             LearningPlanModel updatedPlan = learningPlanService.updatePlan(userEmail, plan);
             return ResponseEntity.ok(updatedPlan);
