@@ -37,6 +37,32 @@ const learningPlanService = {
     console.log('Deleted learning plan:', response.data);
     return response.data;
   },
+
+  getSharedPlans: async () => {
+    try {
+      console.log('Fetching shared learning plans from:', `${API_URL}/shared`);
+      const response = await axios.get(`${API_URL}/shared`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Shared plans response:', response);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching shared plans:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      return [];
+    }
+  },
 };
 
 export default learningPlanService;

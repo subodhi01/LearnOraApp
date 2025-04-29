@@ -9,6 +9,7 @@ import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import LearningPlan from './components/LearningPlan/LearningPlan';
+import Courses from './components/Courses/Courses';
 import './App.css';
 
 // Add Font Awesome
@@ -95,6 +96,11 @@ function App() {
                 <Route path="/learning-plans" element={
                   <ProtectedRoute>
                     <LearningPlan />
+                  </ProtectedRoute>
+                } />
+                <Route path="/courses" element={
+                  <ProtectedRoute>
+                    <Courses />
                   </ProtectedRoute>
                 } />
               </Routes>

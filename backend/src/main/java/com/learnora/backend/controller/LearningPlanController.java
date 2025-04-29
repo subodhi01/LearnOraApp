@@ -6,11 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/learning-plan")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
 public class LearningPlanController {
 
     @Autowired
@@ -66,6 +67,23 @@ public class LearningPlanController {
             learningPlanService.deletePlan(planId);
             return ResponseEntity.ok("Learning plan deleted successfully");
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/shared")
+    public ResponseEntity<?> getSharedPlans() {
+        try {
+            System.out.println("Received request for shared plans");
+            List<LearningPlanModel> sharedPlans = learningPlanService.getSharedPlans();
+            System.out.println("Found " + sharedPlans.size() + " shared plans");
+            if (sharedPlans.isEmpty()) {
+                return ResponseEntity.ok(Collections.emptyList());
+            }
+            return ResponseEntity.ok(sharedPlans);
+        } catch (Exception e) {
+            System.err.println("Error in getSharedPlans: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

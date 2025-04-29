@@ -5,6 +5,7 @@ import com.learnora.backend.repository.LearningPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -73,6 +74,22 @@ public class LearningPlanService {
             throw new Exception("Learning plan not found");
         }
         learningPlanRepository.deleteById(planId);
+    }
+
+    public List<LearningPlanModel> getSharedPlans() throws Exception {
+        System.out.println("Service: Getting shared plans");
+        try {
+            List<LearningPlanModel> sharedPlans = learningPlanRepository.findByShared(true);
+            System.out.println("Service: Found " + (sharedPlans != null ? sharedPlans.size() : 0) + " shared plans");
+            if (sharedPlans == null) {
+                return Collections.emptyList();
+            }
+            return sharedPlans;
+        } catch (Exception e) {
+            System.err.println("Service error in getSharedPlans: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     // helper method to calculate progress
