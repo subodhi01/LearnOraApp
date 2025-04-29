@@ -93,6 +93,16 @@ function App() {
                   <Route path="overview" element={<div>Overview Content</div>} />
                   <Route path="settings" element={<Settings />} />
                 </Route>
+                <Route path="/learning-plans" element={
+                  <ProtectedRoute>
+                    <LearningPlan />
+                  </ProtectedRoute>
+                } />
+                <Route path="/courses" element={
+                  <ProtectedRoute>
+                    <Courses />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </main>
             <Footer />
