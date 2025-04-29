@@ -18,6 +18,8 @@ public class LearningPlanModel {
     private Date startDate;
     private Date endDate;
     private Integer progress;
+    private String status;
+    private boolean shared;
     private List<Topic> topics;
 
     public LearningPlanModel() {
@@ -133,5 +135,21 @@ public void setProgress(Integer progress) {
 
     public void setTopics(List<Topic> topics) {
         this.topics = topics;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean isShared() {
+        return shared;
+    }
+
+    public void setShared(boolean shared) {
+        this.shared = shared;
     }
 }

@@ -7,6 +7,8 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
     description: '',
     startDate: '',
     endDate: '',
+    status: 'Not Started',
+    shared: false,
     topics: [{ title: '', resources: '', completed: false }]
   });
 
@@ -15,16 +17,18 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
       setFormData({
         ...plan,
         startDate: new Date(plan.startDate).toISOString().split('T')[0],
-        endDate: new Date(plan.endDate).toISOString().split('T')[0]
+        endDate: new Date(plan.endDate).toISOString().split('T')[0],
+        shared: plan.shared || false
       });
     }
   }, [plan]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    console.log('Form field changed:', name, type === 'checkbox' ? checked : value);
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -56,6 +60,7 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Submitting form with sharing status:', formData.shared);
     onSubmit(formData);
   };
 
@@ -84,6 +89,33 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
             onChange={handleChange}
             required
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="status">Status</label>
+          <select
+            id="status"
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            required
+          >
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+
+        <div className="form-group checkbox">
+          <label>
+            <input
+              type="checkbox"
+              name="shared"
+              checked={formData.shared}
+              onChange={handleChange}
+            />
+            Share this plan
+          </label>
         </div>
 
         <div className="form-group date-group">

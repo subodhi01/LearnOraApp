@@ -37,12 +37,11 @@ const LearningPlanList = ({
                   >
                     Delete
                   </button>
-                  <button 
-                    className="action-btn share"
-                    onClick={() => onSharePlan(plan.id)}
-                  >
-                    Share
-                  </button>
+                  {plan.shared && (
+                    <span className="share-indicator" title="Shared Plan">
+                      ✓
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -51,6 +50,9 @@ const LearningPlanList = ({
                 <div className="plan-meta">
                   <span className="plan-topics">
                     {plan.topics?.length || 0} Topics
+                  </span>
+                  <span className="plan-status">
+                    Status: {plan.status}
                   </span>
                   <span className="plan-progress">
                     Progress: {calculateProgress(plan)}%

@@ -17,8 +17,9 @@ public class LearningPlanService {
         if (plan.getTitle() == null || plan.getTitle().isEmpty()) {
             throw new IllegalArgumentException("Plan title is required");
         }
+        System.out.println("Creating plan with sharing status: " + plan.isShared());
         plan.setUserEmail(userEmail);
-        plan.setProgress(calculateProgress(plan)); // calculate progress before saving
+        plan.setProgress(calculateProgress(plan));
         return learningPlanRepository.save(plan);
     }
 
@@ -38,9 +39,11 @@ public class LearningPlanService {
                 .orElseThrow(() -> new Exception("Learning plan not found"));
     }
 
-    public LearningPlanModel updatePlan(String planId, LearningPlanModel updates) throws Exception {
-        LearningPlanModel existingPlan = learningPlanRepository.findById(planId)
+    public LearningPlanModel updatePlan(String userEmail, LearningPlanModel updates) throws Exception {
+        LearningPlanModel existingPlan = learningPlanRepository.findById(updates.getId())
                 .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        System.out.println("Updating plan with sharing status: " + updates.isShared());
 
         if (updates.getTitle() != null) {
             existingPlan.setTitle(updates.getTitle());
@@ -57,8 +60,11 @@ public class LearningPlanService {
         if (updates.getTopics() != null) {
             existingPlan.setTopics(updates.getTopics());
         }
-
-        existingPlan.setProgress(calculateProgress(existingPlan)); // recalculate progress after updates
+        if (updates.getStatus() != null) {
+            existingPlan.setStatus(updates.getStatus());
+        }
+        existingPlan.setShared(updates.isShared());
+        existingPlan.setProgress(calculateProgress(existingPlan));
         return learningPlanRepository.save(existingPlan);
     }
 

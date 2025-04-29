@@ -19,6 +19,7 @@ public class LearningPlanController {
     @PostMapping
     public ResponseEntity<?> createPlan(@RequestParam String userEmail, @RequestBody LearningPlanModel plan) {
         try {
+            System.out.println("Received plan for creation: " + plan);
             LearningPlanModel createdPlan = learningPlanService.createPlan(userEmail, plan);
             return ResponseEntity.ok(createdPlan);
         } catch (Exception e) {
@@ -51,6 +52,7 @@ public class LearningPlanController {
             @RequestParam String userEmail,
             @RequestBody LearningPlanModel plan) {
         try {
+            System.out.println("Received plan for update: " + plan);
             LearningPlanModel updatedPlan = learningPlanService.updatePlan(userEmail, plan);
             return ResponseEntity.ok(updatedPlan);
         } catch (Exception e) {
