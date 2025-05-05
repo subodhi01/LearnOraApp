@@ -12,6 +12,7 @@ public class UserModel {
     private String lastName;
     private String email;
     private String password;
+    private String phone;
 
     public UserModel() {}
 
@@ -60,5 +61,13 @@ public class UserModel {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

@@ -45,6 +45,9 @@ public class UserService {
         if (updates.getLastName() != null) {
             user.setLastName(updates.getLastName());
         }
+        if (updates.getPhone() != null) {
+            user.setPhone(updates.getPhone());
+        }
         return userRepository.save(user);
     }
 
