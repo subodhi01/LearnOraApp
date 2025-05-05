@@ -108,6 +108,9 @@ const Community = () => {
   };
 
   const handleDeleteComment = async (commentId, postId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this comment?');
+    if (!confirmed) return;
+
     try {
       await deleteComment(commentId, user._id);
       setComments((prev) => ({
@@ -138,9 +141,7 @@ const Community = () => {
                 <div key={comment.id} className="comment">
                   <div className="comment-header">
                     <span className="comment-username">{comment.username}</span>
-                    <span className="comment-date">
-                      {new Date(comment.createdAt).toLocaleString()}
-                    </span>
+                    <span className="comment-date">27/4/2025</span>
                   </div>
                   {editingComment === comment.id ? (
                     <div className="edit-comment-form">
