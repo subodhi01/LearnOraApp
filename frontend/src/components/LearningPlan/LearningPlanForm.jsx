@@ -11,6 +11,7 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
     shared: false,
     topics: [{ title: '', resources: '', completed: false }]
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (plan) {
@@ -23,13 +24,41 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
     }
   }, [plan]);
 
+  const validateDates = (startDate, endDate) => {
+    const errors = {};
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      errors.startDate = 'Start date cannot be in the past';
+    }
+    if (end < start) {
+      errors.endDate = 'End date must be after start date';
+    }
+    return errors;
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     console.log('Form field changed:', name, type === 'checkbox' ? checked : value);
-    setFormData(prev => ({
-      ...prev,
+    
+    const newFormData = {
+      ...formData,
       [name]: type === 'checkbox' ? checked : value
-    }));
+    };
+
+    // Validate dates when either date changes
+    if (name === 'startDate' || name === 'endDate') {
+      const dateErrors = validateDates(
+        name === 'startDate' ? value : formData.startDate,
+        name === 'endDate' ? value : formData.endDate
+      );
+      setErrors(prev => ({ ...prev, ...dateErrors }));
+    }
+
+    setFormData(newFormData);
   };
 
   const handleTopicChange = (index, field, value) => {
@@ -60,6 +89,27 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate dates before submission
+    const dateErrors = validateDates(formData.startDate, formData.endDate);
+    if (Object.keys(dateErrors).length > 0) {
+      setErrors(dateErrors);
+      return;
+    }
+
+    // Validate topics
+    const topicErrors = {};
+    formData.topics.forEach((topic, index) => {
+      if (!topic.title.trim()) {
+        topicErrors[`topic-${index}`] = 'Topic title is required';
+      }
+    });
+
+    if (Object.keys(topicErrors).length > 0) {
+      setErrors(prev => ({ ...prev, ...topicErrors }));
+      return;
+    }
+
     console.log('Submitting form with sharing status:', formData.shared);
     onSubmit(formData);
   };
@@ -129,6 +179,9 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
               onChange={handleChange}
               required
             />
+            {errors.startDate && (
+              <span className="error-message">{errors.startDate}</span>
+            )}
           </div>
           <div>
             <label htmlFor="endDate">End Date</label>
@@ -140,6 +193,9 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
               onChange={handleChange}
               required
             />
+            {errors.endDate && (
+              <span className="error-message">{errors.endDate}</span>
+            )}
           </div>
         </div>
 
@@ -156,6 +212,9 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
                   onChange={(e) => handleTopicChange(index, 'title', e.target.value)}
                   required
                 />
+                {errors[`topic-${index}`] && (
+                  <span className="error-message">{errors[`topic-${index}`]}</span>
+                )}
               </div>
 
               <div className="form-group">

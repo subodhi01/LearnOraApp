@@ -18,6 +18,13 @@ public class LearningPlanService {
         if (plan.getTitle() == null || plan.getTitle().isEmpty()) {
             throw new IllegalArgumentException("Plan title is required");
         }
+        if (plan.getStartDate() == null || plan.getEndDate() == null) {
+            throw new IllegalArgumentException("Start date and end date are required");
+        }
+        if (plan.getStartDate().after(plan.getEndDate())) {
+            throw new IllegalArgumentException("Start date must be before end date");
+        }
+        
         System.out.println("Creating plan with sharing status: " + plan.isShared());
         plan.setUserEmail(userEmail);
         plan.setProgress(calculateProgress(plan));
@@ -44,6 +51,10 @@ public class LearningPlanService {
         LearningPlanModel existingPlan = learningPlanRepository.findById(updates.getId())
                 .orElseThrow(() -> new Exception("Learning plan not found"));
 
+        if (!existingPlan.getUserEmail().equals(userEmail)) {
+            throw new Exception("You don't have permission to update this plan");
+        }
+
         System.out.println("Updating plan with sharing status: " + updates.isShared());
 
         if (updates.getTitle() != null) {
@@ -53,9 +64,15 @@ public class LearningPlanService {
             existingPlan.setDescription(updates.getDescription());
         }
         if (updates.getStartDate() != null) {
+            if (updates.getEndDate() != null && updates.getStartDate().after(updates.getEndDate())) {
+                throw new IllegalArgumentException("Start date must be before end date");
+            }
             existingPlan.setStartDate(updates.getStartDate());
         }
         if (updates.getEndDate() != null) {
+            if (updates.getStartDate() != null && updates.getStartDate().after(updates.getEndDate())) {
+                throw new IllegalArgumentException("Start date must be before end date");
+            }
             existingPlan.setEndDate(updates.getEndDate());
         }
         if (updates.getTopics() != null) {
@@ -97,9 +114,14 @@ public class LearningPlanService {
         if (plan.getTopics() == null || plan.getTopics().isEmpty()) {
             return 0;
         }
+        
+        // Count completed topics
         long completed = plan.getTopics().stream()
                 .filter(LearningPlanModel.Topic::isCompleted)
                 .count();
-        return (int) Math.round((completed / (double) plan.getTopics().size()) * 100);
+        
+        // Calculate percentage and round to nearest integer
+        double progress = (completed / (double) plan.getTopics().size()) * 100;
+        return (int) Math.round(progress);
     }
 }
