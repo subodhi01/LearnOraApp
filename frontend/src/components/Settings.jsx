@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { getUserProfile, updateUserProfile, changePassword } from '../services/userService';
 import './Settings.css';
 
 const Settings = () => {
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('account');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,17 +26,18 @@ const Settings = () => {
   });
 
   useEffect(() => {
-    fetchUserProfile();
-  }, []);
+    if (authUser) {
+      fetchUserProfile();
+    }
+  }, [authUser]);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      console.log('Token:', token); // Debug token
+      console.log('Fetching profile for user:', authUser); // Debug log
       
       const userData = await getUserProfile();
-      console.log('User Data:', userData); // Debug user data
+      console.log('User Data:', userData); // Debug log
       
       setUser(userData);
       setProfileForm({
@@ -91,6 +94,10 @@ const Settings = () => {
       setLoading(false);
     }
   };
+
+  if (!authUser) {
+    return <div className="settings-container">Please log in to view your settings.</div>;
+  }
 
   if (loading && !user) {
     return <div className="settings-container">Loading...</div>;
