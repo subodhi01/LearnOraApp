@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import LearningPlan from './components/LearningPlan/LearningPlan';
 import Courses from './components/Courses/Courses';
+import ProgressTemplate from './components/ProgressTemplate/ProgressTemplate';
 import './App.css';
 
 // Add Font Awesome
@@ -94,6 +95,8 @@ function App() {
                   <Route index element={<Navigate to="overview" replace />} />
                   <Route path="overview" element={<div>Overview Content</div>} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="progress" element={<ProgressTemplate />} />
+                  <Route path="progress-templates" element={<ProgressTemplate />} />
                 </Route>
                 <Route path="/learning-plans" element={
                   <ProtectedRoute>
