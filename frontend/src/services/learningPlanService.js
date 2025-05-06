@@ -1,0 +1,133 @@
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8000/api/learning-plan';
+
+class LearningPlanError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'LearningPlanError';
+    this.status = status;
+  }
+}
+
+const getAuthHeaders = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? { 'Authorization': `Bearer ${user.token}` } : {};
+};
+
+const learningPlanService = {
+  getPlans: async (userEmail) => {
+    try {
+      console.log('Fetching learning plans for user:', userEmail);
+      const response = await axios.get(API_URL, { 
+        params: { userEmail },
+        headers: getAuthHeaders()
+      });
+      console.log('Received learning plans:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching learning plans:', error);
+      if (error.response?.status === 401) {
+        // Handle unauthorized access
+        throw new LearningPlanError('Please log in to view your learning plans', 401);
+      }
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to fetch learning plans',
+        error.response?.status
+      );
+    }
+  },
+
+  getPlanById: async (planId) => {
+    try {
+      console.log('Fetching learning plan by ID:', planId);
+      const response = await axios.get(`${API_URL}/${planId}`, {
+        headers: getAuthHeaders()
+      });
+      console.log('Received learning plan:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching learning plan:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to fetch learning plan',
+        error.response?.status
+      );
+    }
+  },
+
+  createPlan: async (userEmail, plan) => {
+    try {
+      console.log('Creating new learning plan:', { userEmail, plan });
+      const response = await axios.post(API_URL, plan, { 
+        params: { userEmail },
+        headers: getAuthHeaders()
+      });
+      console.log('Created learning plan:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating learning plan:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to create learning plan',
+        error.response?.status
+      );
+    }
+  },
+
+  updatePlan: async (plan, userEmail) => {
+    try {
+      console.log('Updating learning plan:', { plan, userEmail });
+      const response = await axios.put(API_URL, plan, { 
+        params: { userEmail },
+        headers: getAuthHeaders()
+      });
+      console.log('Updated learning plan:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating learning plan:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to update learning plan',
+        error.response?.status
+      );
+    }
+  },
+
+  deletePlan: async (planId) => {
+    try {
+      console.log('Deleting learning plan:', planId);
+      const response = await axios.delete(`${API_URL}/${planId}`, {
+        headers: getAuthHeaders()
+      });
+      console.log('Deleted learning plan:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting learning plan:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to delete learning plan',
+        error.response?.status
+      );
+    }
+  },
+
+  getSharedPlans: async () => {
+    try {
+      console.log('Fetching shared learning plans from:', `${API_URL}/shared`);
+      const response = await axios.get(`${API_URL}/shared`, {
+        headers: {
+          ...getAuthHeaders(),
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Shared plans response:', response);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching shared plans:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to fetch shared plans',
+        error.response?.status
+      );
+    }
+  },
+};
+
+export default learningPlanService;

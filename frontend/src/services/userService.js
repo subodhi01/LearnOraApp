@@ -30,11 +30,32 @@ export const updateUserProfile = async (profileData) => {
       throw new Error('No user email found');
     }
 
-    const response = await axios.put(`${API_URL}/user/profile`, {
+    // Ensure phone number is included in the update
+    const updateData = {
       email: user.email,
-      ...profileData
-    });
-    return response.data;
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      phone: profileData.phone || '' // Include phone number, default to empty string if not provided
+    };
+
+    console.log('Sending update data:', updateData); // Debug log
+
+    const response = await axios.put(`${API_URL}/user/profile`, updateData);
+    console.log('Update response:', response.data); // Debug log
+    
+    // Update the user in localStorage with the new data
+    const updatedUser = response.data;
+    const updatedUserData = {
+      ...user,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      phone: updatedUser.phone || ''
+    };
+    
+    localStorage.setItem('user', JSON.stringify(updatedUserData));
+    console.log('Updated user data in localStorage:', updatedUserData); // Debug log
+    
+    return updatedUser;
   } catch (error) {
     console.error('Error updating profile:', {
       message: error.message,

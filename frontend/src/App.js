@@ -8,7 +8,8 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
-import Community from './components/Community';
+import LearningPlan from './components/LearningPlan/LearningPlan';
+import Courses from './components/Courses/Courses';
 import './App.css';
 
 // Add Font Awesome
@@ -64,10 +65,12 @@ function App() {
             <Header />
             <main className="main-content">
               <Routes>
-                <Route path="/" element={<div className="welcome-section">
-                  <h1>Welcome to LearnOra</h1>
-                  <p>Your journey to knowledge starts here</p>
-                </div>} />
+                <Route path="/" element={
+                  <div className="welcome-section">
+                    <h1>Welcome to LearnOra</h1>
+                    <p>Your journey to knowledge starts here</p>
+                  </div>
+                } />
                 <Route path="/signup" element={
                   <PublicRoute>
                     <Signup />
@@ -83,7 +86,6 @@ function App() {
                     <ForgotPassword />
                   </PublicRoute>
                 } />
-                <Route path="/community" element={<Community />} />
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
@@ -93,6 +95,16 @@ function App() {
                   <Route path="overview" element={<div>Overview Content</div>} />
                   <Route path="settings" element={<Settings />} />
                 </Route>
+                <Route path="/learning-plans" element={
+                  <ProtectedRoute>
+                    <LearningPlan />
+                  </ProtectedRoute>
+                } />
+                <Route path="/courses" element={
+                  <ProtectedRoute>
+                    <Courses />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </main>
             <Footer />

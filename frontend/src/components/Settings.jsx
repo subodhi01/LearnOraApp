@@ -60,6 +60,8 @@ const Settings = () => {
       setUser(updatedUser);
       setSuccess('Profile updated successfully');
       setError(null);
+      await fetchUserProfile();
+      setActiveTab('account');
     } catch (err) {
       setError(err.message || 'Failed to update profile');
     } finally {
@@ -141,7 +143,7 @@ const Settings = () => {
               </div>
               <div className="info-group">
                 <label>Phone</label>
-                <p>{user?.phone || 'Not set'}</p>
+                <p>{user?.phone ? user.phone : 'Not set'}</p>
               </div>
             </div>
           </div>
