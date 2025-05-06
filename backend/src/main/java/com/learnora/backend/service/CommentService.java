@@ -113,20 +113,32 @@ public class CommentService {
         // Get all comments for the post
         List<CommentModel> allComments = commentRepository.findByPostId(postId);
         
-        // Filter out replies and organize them under their parent comments
+        // Filter out top-level comments (those without a parent)
         List<CommentModel> parentComments = allComments.stream()
             .filter(comment -> comment.getParentId() == null || comment.getParentId().isEmpty())
             .toList();
 
-        // Add replies to their parent comments
+        // Build the comment tree recursively
         for (CommentModel parent : parentComments) {
-            List<CommentModel> replies = allComments.stream()
-                .filter(comment -> parent.getId().equals(comment.getParentId()))
-                .toList();
-            parent.setReplies(replies);
+            buildCommentTree(parent, allComments);
         }
 
         return parentComments;
+    }
+
+    private void buildCommentTree(CommentModel comment, List<CommentModel> allComments) {
+        // Find all direct replies to this comment
+        List<CommentModel> replies = allComments.stream()
+            .filter(c -> comment.getId().equals(c.getParentId()))
+            .toList();
+        
+        // Set the replies
+        comment.setReplies(replies);
+        
+        // Recursively build the tree for each reply
+        for (CommentModel reply : replies) {
+            buildCommentTree(reply, allComments);
+        }
     }
 
     public CommentModel updateComment(String id, CommentModel updates, String userEmail) throws Exception {
