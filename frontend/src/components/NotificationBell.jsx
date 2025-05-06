@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { getUnreadCount, getUnreadNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import './NotificationBell.css';
 
 const NotificationBell = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [unreadCount, setUnreadCount] = useState(0);
     const [notifications, setNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -71,8 +73,14 @@ const NotificationBell = () => {
             await markAsRead(notification.id);
             setNotifications(notifications.filter(n => n.id !== notification.id));
             setUnreadCount(prev => Math.max(0, prev - 1));
+
+            // Handle navigation based on notification type
+            if (notification.type === 'COMMENT_REPLY' && notification.relatedId) {
+                // Navigate to the courses page with the comment ID
+                navigate(`/courses?commentId=${notification.relatedId}`);
+            }
         } catch (error) {
-            console.error('Error marking notification as read:', error);
+            console.error('Error handling notification click:', error);
         }
     };
 

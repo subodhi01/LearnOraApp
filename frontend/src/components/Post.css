@@ -1,0 +1,24 @@
+.comment {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease;
+}
+
+.comment.highlight-comment {
+    background-color: #fff3cd;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+    animation: highlight-pulse 2s ease-out;
+}
+
+@keyframes highlight-pulse {
+    0% {
+        background-color: #fff3cd;
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+    }
+    100% {
+        background-color: #f8f9fa;
+        box-shadow: none;
+    }
+} 

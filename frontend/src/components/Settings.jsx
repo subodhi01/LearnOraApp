@@ -35,7 +35,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (authUser) {
-      fetchUserProfile();
+    fetchUserProfile();
     }
   }, [authUser]);
 

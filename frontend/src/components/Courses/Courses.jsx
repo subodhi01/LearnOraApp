@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Courses.css';
 import learningPlanService from '../../services/learningPlanService';
 import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
   const [inputValue, setInputValue] = useState(initialValue);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    // Focus the textarea when the component mounts
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
 
   const handleSubmit = () => {
-    onSubmit(inputValue);
-    setInputValue('');
+    if (inputValue.trim()) {
+      onSubmit(inputValue);
+      setInputValue('');
+    }
   };
 
   const handleCancel = () => {
@@ -20,10 +31,12 @@ const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) =>
   return (
     <div className="comment-input-container">
       <textarea
+        ref={textareaRef}
         placeholder={placeholder}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         className="comment-input"
+        rows={3}
       />
       <div className="comment-actions">
         <button onClick={handleSubmit} className="submit-comment-button">
@@ -40,6 +53,7 @@ const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) =>
 };
 
 const Courses = () => {
+  const location = useLocation();
   const [sharedPlans, setSharedPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState({});
@@ -47,44 +61,90 @@ const Courses = () => {
   const [editingComment, setEditingComment] = useState(null);
   const [errors, setErrors] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
+  const [targetCommentId, setTargetCommentId] = useState(null);
   const { user } = useAuth();
+  const commentRefs = useRef({});
 
+  // Load plans and comments
   useEffect(() => {
-    const fetchSharedPlans = async () => {
+    const loadData = async () => {
       try {
         const plans = await learningPlanService.getSharedPlans();
         setSharedPlans(Array.isArray(plans) ? plans : []);
-        // Fetch comments for each plan
-        plans.forEach(plan => fetchComments(plan.id));
+        
+        // Load comments for all plans
+        for (const plan of plans) {
+          try {
+            const planComments = await getCommentsByPostId(plan.id);
+            setComments(prev => ({ ...prev, [plan.id]: planComments }));
+          } catch (error) {
+            console.error(`Error loading comments for plan ${plan.id}:`, error);
+            setComments(prev => ({ ...prev, [plan.id]: [] }));
+          }
+        }
       } catch (error) {
-        console.error('Error fetching shared plans:', error);
-        setSharedPlans([]);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSharedPlans();
-  }, []);
+    loadData();
+  }, []); // Remove targetCommentId dependency
 
-  const fetchComments = async (planId) => {
-    try {
-      const response = await getCommentsByPostId(planId);
-      setComments(prev => ({ ...prev, [planId]: response }));
-    } catch (error) {
-      console.error(`Error fetching comments for plan ${planId}:`, error);
-      setErrors(prev => ({ ...prev, [planId]: 'Failed to load comments' }));
+  // Separate effect for handling target comment navigation
+  useEffect(() => {
+    const navigateToComment = async () => {
+      if (!targetCommentId || !sharedPlans.length) return;
+
+      // Wait for comments to be loaded
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Find the plan containing the target comment
+      for (const plan of sharedPlans) {
+        const planComments = comments[plan.id] || [];
+        const hasComment = planComments.some(comment => 
+          comment.id === targetCommentId || 
+          (comment.replies && comment.replies.some(reply => reply.id === targetCommentId))
+        );
+
+        if (hasComment) {
+          // Expand the comments section
+          setExpandedComments(prev => ({ ...prev, [plan.id]: true }));
+
+          // Wait for the DOM to update
+          setTimeout(() => {
+            const commentElement = document.querySelector(`[data-comment-id="${targetCommentId}"]`);
+            if (commentElement) {
+              commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              commentElement.classList.add('highlight-comment');
+              setTimeout(() => {
+                commentElement.classList.remove('highlight-comment');
+              }, 2000);
+            }
+          }, 100);
+          break;
+        }
+      }
+    };
+
+    navigateToComment();
+  }, [targetCommentId, sharedPlans, comments]);
+
+  // Handle URL parameters for comment navigation
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const commentId = params.get('commentId');
+    if (commentId) {
+      setTargetCommentId(commentId);
     }
-  };
+  }, [location.search]);
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) {
       console.error('No user object found');
       return;
     }
-
-    console.log('User object:', user);
-    console.log('User email:', user.email);
 
     if (!text.trim()) {
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: 'Comment cannot be empty' }));
@@ -99,25 +159,17 @@ const Courses = () => {
         text: text,
         parentId: parentId
       };
-      console.log('Sending comment data:', commentData);
+      
       const savedComment = await createComment(commentData);
       
-      if (parentId) {
-        setComments(prev => ({
-          ...prev,
-          [planId]: prev[planId].map(comment => 
-            comment.id === parentId 
-              ? { ...comment, replies: [...(comment.replies || []), savedComment] }
-              : comment
-          )
-        }));
-      } else {
-        setComments(prev => ({
-          ...prev,
-          [planId]: [...(prev[planId] || []), savedComment],
-        }));
-      }
+      // Refresh comments for this plan
+      const updatedComments = await getCommentsByPostId(planId);
+      setComments(prev => ({
+        ...prev,
+        [planId]: updatedComments
+      }));
       
+      // Clear any errors and reset reply state
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: '' }));
       setReplyingTo(null);
     } catch (error) {
@@ -194,7 +246,13 @@ const Courses = () => {
     if (!expandedComments[planId]) {
       // If comments are not loaded yet, fetch them
       if (!comments[planId]) {
-        await fetchComments(planId);
+        try {
+          const planComments = await getCommentsByPostId(planId);
+          setComments(prev => ({ ...prev, [planId]: planComments }));
+        } catch (error) {
+          console.error(`Error fetching comments for plan ${planId}:`, error);
+          setErrors(prev => ({ ...prev, [planId]: 'Failed to load comments' }));
+        }
       }
     }
     setExpandedComments(prev => ({
@@ -208,8 +266,16 @@ const Courses = () => {
     const isEditing = editingComment === comment.id;
     const isOwner = user && comment.userId === user.email;
 
+    const handleReplyClick = () => {
+      setReplyingTo(isReplying ? null : comment.id);
+      setErrors(prev => ({ ...prev, [`${planId}-${comment.id}`]: '' }));
+    };
+
     return (
-      <div className={`comment-container level-${level}`}>
+      <div 
+        className={`comment-container level-${level}`}
+        data-comment-id={comment.id}
+      >
         <div className="comment">
           <div className="comment-header">
             <span className="comment-username">{comment.username}</span>
@@ -232,7 +298,8 @@ const Courses = () => {
                 {user && (
                   <button
                     className="reply-button"
-                    onClick={() => setReplyingTo(isReplying ? null : comment.id)}
+                    onClick={handleReplyClick}
+                    type="button"
                   >
                     {isReplying ? 'Cancel Reply' : 'Reply'}
                   </button>
@@ -242,12 +309,14 @@ const Courses = () => {
                     <button
                       className="edit-button"
                       onClick={() => setEditingComment(comment.id)}
+                      type="button"
                     >
                       Edit
                     </button>
                     <button
                       className="delete-button"
                       onClick={() => handleDeleteComment(planId, comment.id)}
+                      type="button"
                     >
                       Delete
                     </button>
