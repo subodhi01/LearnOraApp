@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Courses.css';
 import learningPlanService from '../../services/learningPlanService';
-import { createComment, getCommentsByPostId } from '../../services/commentService';
+import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
 
 const Courses = () => {
@@ -9,6 +9,8 @@ const Courses = () => {
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
   const [errors, setErrors] = useState({});
   const { user } = useAuth();
 
@@ -40,11 +42,12 @@ const Courses = () => {
     }
   };
 
-  const handleCommentSubmit = async (planId) => {
+  const handleCommentSubmit = async (planId, parentId = null) => {
     if (!user) return;
 
-    if (!newComment[planId]?.trim()) {
-      setErrors(prev => ({ ...prev, [planId]: 'Comment cannot be empty' }));
+    const commentKey = parentId ? `${planId}-${parentId}` : planId;
+    if (!newComment[commentKey]?.trim()) {
+      setErrors(prev => ({ ...prev, [commentKey]: 'Comment cannot be empty' }));
       return;
     }
 
@@ -53,19 +56,222 @@ const Courses = () => {
         postId: planId,
         userId: user._id,
         username: `${user.firstName} ${user.lastName}`,
-        text: newComment[planId],
+        text: newComment[commentKey],
+        parentId: parentId
       };
       const savedComment = await createComment(commentData);
-      setComments(prev => ({
-        ...prev,
-        [planId]: [...(prev[planId] || []), savedComment],
-      }));
-      setNewComment(prev => ({ ...prev, [planId]: '' }));
-      setErrors(prev => ({ ...prev, [planId]: '' }));
+      
+      if (parentId) {
+        // Update the parent comment's replies
+        setComments(prev => ({
+          ...prev,
+          [planId]: prev[planId].map(comment => 
+            comment.id === parentId 
+              ? { ...comment, replies: [...(comment.replies || []), savedComment] }
+              : comment
+          )
+        }));
+      } else {
+        // Add as a new top-level comment
+        setComments(prev => ({
+          ...prev,
+          [planId]: [...(prev[planId] || []), savedComment],
+        }));
+      }
+      
+      setNewComment(prev => ({ ...prev, [commentKey]: '' }));
+      setErrors(prev => ({ ...prev, [commentKey]: '' }));
+      setReplyingTo(null);
     } catch (error) {
       console.error('Error creating comment:', error);
-      setErrors(prev => ({ ...prev, [planId]: error.message || 'Failed to post comment' }));
+      setErrors(prev => ({ ...prev, [commentKey]: error.message || 'Failed to post comment' }));
     }
+  };
+
+  const handleUpdateComment = async (planId, commentId, newText) => {
+    if (!user) return;
+
+    try {
+      const updatedComment = await updateComment(commentId, { text: newText });
+      
+      // Update the comment in the state
+      setComments(prev => ({
+        ...prev,
+        [planId]: prev[planId].map(comment => {
+          if (comment.id === commentId) {
+            return { ...comment, text: newText };
+          }
+          // Check replies
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply =>
+                reply.id === commentId ? { ...reply, text: newText } : reply
+              )
+            };
+          }
+          return comment;
+        })
+      }));
+
+      setEditingComment(null);
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to update comment' }));
+    }
+  };
+
+  const handleDeleteComment = async (planId, commentId) => {
+    if (!user) return;
+
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      await deleteComment(commentId, user._id);
+      
+      // Remove the comment from the state
+      setComments(prev => ({
+        ...prev,
+        [planId]: prev[planId].map(comment => {
+          if (comment.id === commentId) {
+            return null; // Remove the comment
+          }
+          // Check replies
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.filter(reply => reply.id !== commentId)
+            };
+          }
+          return comment;
+        }).filter(Boolean) // Remove null entries
+      }));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to delete comment' }));
+    }
+  };
+
+  const CommentSection = ({ planId, comment, level = 0 }) => {
+    const commentKey = `${planId}-${comment.id}`;
+    const isReplying = replyingTo === comment.id;
+    const isEditing = editingComment === comment.id;
+    const isOwner = user && comment.userId === user._id;
+
+    return (
+      <div className={`comment-container level-${level}`}>
+        <div className="comment">
+          <div className="comment-header">
+            <span className="comment-username">{comment.username}</span>
+            <span className="comment-date">
+              {new Date(comment.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+          
+          {isEditing ? (
+            <div className="edit-form">
+              <textarea
+                value={newComment[commentKey] || comment.text}
+                onChange={(e) =>
+                  setNewComment(prev => ({ ...prev, [commentKey]: e.target.value }))
+                }
+                className="comment-input"
+              />
+              <div className="edit-actions">
+                <button
+                  onClick={() => handleUpdateComment(planId, comment.id, newComment[commentKey])}
+                  className="submit-comment-button"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingComment(null);
+                    setNewComment(prev => ({ ...prev, [commentKey]: '' }));
+                  }}
+                  className="cancel-button"
+                >
+                  Cancel
+                </button>
+              </div>
+              {errors[commentKey] && (
+                <span className="error-message">{errors[commentKey]}</span>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="comment-text">{comment.text}</p>
+              <div className="comment-actions">
+                {user && (
+                  <button
+                    className="reply-button"
+                    onClick={() => setReplyingTo(isReplying ? null : comment.id)}
+                  >
+                    {isReplying ? 'Cancel Reply' : 'Reply'}
+                  </button>
+                )}
+                {isOwner && (
+                  <>
+                    <button
+                      className="edit-button"
+                      onClick={() => {
+                        setEditingComment(comment.id);
+                        setNewComment(prev => ({ ...prev, [commentKey]: comment.text }));
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDeleteComment(planId, comment.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {isReplying && (
+          <div className="reply-form">
+            <textarea
+              placeholder="Write a reply..."
+              value={newComment[commentKey] || ''}
+              onChange={(e) =>
+                setNewComment(prev => ({ ...prev, [commentKey]: e.target.value }))
+              }
+              className="comment-input"
+            />
+            <button
+              onClick={() => handleCommentSubmit(planId, comment.id)}
+              className="submit-comment-button"
+            >
+              Post Reply
+            </button>
+            {errors[commentKey] && (
+              <span className="error-message">{errors[commentKey]}</span>
+            )}
+          </div>
+        )}
+
+        {comment.replies?.length > 0 && (
+          <div className="replies-container">
+            {comment.replies.map((reply) => (
+              <CommentSection
+                key={reply.id}
+                planId={planId}
+                comment={reply}
+                level={level + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading) {
@@ -111,15 +317,11 @@ const Courses = () => {
                   <h4>Comments</h4>
                   {comments[plan.id]?.length > 0 ? (
                     comments[plan.id].map((comment) => (
-                      <div key={comment.id} className="comment">
-                        <div className="comment-header">
-                          <span className="comment-username">{comment.username}</span>
-                          <span className="comment-date">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="comment-text">{comment.text}</p>
-                      </div>
+                      <CommentSection
+                        key={comment.id}
+                        planId={plan.id}
+                        comment={comment}
+                      />
                     ))
                   ) : (
                     <p>No comments yet. Be the first to comment!</p>

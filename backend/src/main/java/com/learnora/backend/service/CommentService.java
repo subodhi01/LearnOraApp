@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CommentService {
@@ -42,6 +43,14 @@ public class CommentService {
             throw new Exception("Username does not match user");
         }
 
+        // If this is a reply, verify parent comment exists
+        if (comment.getParentId() != null && !comment.getParentId().isEmpty()) {
+            Optional<CommentModel> parentComment = commentRepository.findById(comment.getParentId());
+            if (!parentComment.isPresent()) {
+                throw new Exception("Parent comment not found");
+            }
+        }
+
         return commentRepository.save(comment);
     }
 
@@ -49,7 +58,23 @@ public class CommentService {
         if (postId == null || postId.isEmpty()) {
             throw new Exception("Post ID is required");
         }
-        return commentRepository.findByPostId(postId);
+        // Get all comments for the post
+        List<CommentModel> allComments = commentRepository.findByPostId(postId);
+        
+        // Filter out replies and organize them under their parent comments
+        List<CommentModel> parentComments = allComments.stream()
+            .filter(comment -> comment.getParentId() == null || comment.getParentId().isEmpty())
+            .toList();
+
+        // Add replies to their parent comments
+        for (CommentModel parent : parentComments) {
+            List<CommentModel> replies = allComments.stream()
+                .filter(comment -> parent.getId().equals(comment.getParentId()))
+                .toList();
+            parent.setReplies(replies);
+        }
+
+        return parentComments;
     }
 
     public CommentModel updateComment(String id, CommentModel updates) throws Exception {
@@ -72,6 +97,15 @@ public class CommentService {
         // Only allow the comment's owner to delete it
         if (!comment.getUserId().equals(userId)) {
             throw new Exception("Unauthorized: Only the comment owner can delete it");
+        }
+
+        // Delete all replies to this comment
+        List<CommentModel> replies = commentRepository.findByPostId(comment.getPostId()).stream()
+            .filter(c -> id.equals(c.getParentId()))
+            .toList();
+        
+        for (CommentModel reply : replies) {
+            commentRepository.deleteById(reply.getId());
         }
 
         commentRepository.deleteById(id);

@@ -4,6 +4,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Document(collection = "comments")
 public class CommentModel {
@@ -15,8 +17,12 @@ public class CommentModel {
     private String username;
     private String text;
     private LocalDateTime createdAt;
+    private String parentId; // ID of the parent comment if this is a reply
+    private List<CommentModel> replies; // List of replies to this comment
 
-    public CommentModel() {}
+    public CommentModel() {
+        this.replies = new ArrayList<>();
+    }
 
     public CommentModel(String postId, String userId, String username, String text) {
         this.postId = postId;
@@ -24,6 +30,7 @@ public class CommentModel {
         this.username = username;
         this.text = text;
         this.createdAt = LocalDateTime.now();
+        this.replies = new ArrayList<>();
     }
 
     public String getId() {
@@ -72,5 +79,21 @@ public class CommentModel {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    public List<CommentModel> getReplies() {
+        return replies;
+    }
+
+    public void setReplies(List<CommentModel> replies) {
+        this.replies = replies;
     }
 }
