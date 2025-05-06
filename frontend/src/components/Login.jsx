@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { login } from '../services/authService';
 import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login: authLogin } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -43,22 +43,23 @@ const Login = () => {
     
     if (validateForm()) {
       try {
-        const response = await axios.post('http://localhost:8000/api/auth/signin', {
-          email: formData.email,
-          password: formData.password
-        });
+        const response = await login(formData.email, formData.password);
 
-        login({
-          _id: response.data.id, // Include _id for comment userId
-          firstName: response.data.firstName,
-          lastName: response.data.lastName,
-          email: response.data.email
+        console.log('Login response:', response);
+        console.log('Token present in response:', !!response.token);
+
+        authLogin({
+          id: response.id,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          email: response.email,
+          token: response.token
         });
         
         navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
-        setErrors({ submit: error.response?.data || 'An unexpected error occurred. Please try again.' });
+        setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
       }
     }
   };

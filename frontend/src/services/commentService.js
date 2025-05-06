@@ -2,15 +2,46 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api/comments';
 
+// Get the auth token from localStorage
+const getAuthToken = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.token;
+};
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const createComment = async (commentData) => {
   try {
-    const response = await axios.post(API_URL, commentData);
+    console.log('Creating comment with data:', JSON.stringify(commentData, null, 2));
+    const response = await api.post('', commentData);
+    console.log('Comment created successfully:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error creating comment:', {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
+      requestData: commentData
     });
     throw new Error(error.response?.data || 'Failed to create comment');
   }
@@ -18,7 +49,7 @@ export const createComment = async (commentData) => {
 
 export const getCommentsByPostId = async (postId) => {
   try {
-    const response = await axios.get(`${API_URL}/post/${postId}`);
+    const response = await api.get(`/post/${postId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching comments:', {
@@ -32,7 +63,7 @@ export const getCommentsByPostId = async (postId) => {
 
 export const updateComment = async (commentId, updates) => {
   try {
-    const response = await axios.put(`${API_URL}/${commentId}`, updates);
+    const response = await api.put(`/${commentId}`, updates);
     return response.data;
   } catch (error) {
     console.error('Error updating comment:', {
@@ -46,7 +77,7 @@ export const updateComment = async (commentId, updates) => {
 
 export const deleteComment = async (commentId, userId) => {
   try {
-    const response = await axios.delete(`${API_URL}/${commentId}`, {
+    const response = await api.delete(`/${commentId}`, {
       params: { userId },
     });
     return response.data;

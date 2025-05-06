@@ -4,6 +4,8 @@ import com.learnora.backend.model.LearningPlanModel;
 import com.learnora.backend.service.LearningPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -11,15 +13,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/learning-plan")
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+@CrossOrigin(origins = "http://localhost:3000")
 public class LearningPlanController {
 
     @Autowired
     private LearningPlanService learningPlanService;
 
     @PostMapping
-    public ResponseEntity<?> createPlan(@RequestParam String userEmail, @RequestBody LearningPlanModel plan) {
+    public ResponseEntity<?> createPlan(@RequestBody LearningPlanModel plan) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
             System.out.println("Received plan for creation: " + plan);
             LearningPlanModel createdPlan = learningPlanService.createPlan(userEmail, plan);
             return ResponseEntity.ok(createdPlan);
@@ -29,8 +33,10 @@ public class LearningPlanController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getPlans(@RequestParam String userEmail) {
+    public ResponseEntity<?> getPlans() {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
             List<LearningPlanModel> plans = learningPlanService.getPlans(userEmail);
             return ResponseEntity.ok(plans);
         } catch (Exception e) {
@@ -49,10 +55,10 @@ public class LearningPlanController {
     }
 
     @PutMapping
-    public ResponseEntity<?> updatePlan(
-            @RequestParam String userEmail,
-            @RequestBody LearningPlanModel plan) {
+    public ResponseEntity<?> updatePlan(@RequestBody LearningPlanModel plan) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
             System.out.println("Received plan for update: " + plan);
             LearningPlanModel updatedPlan = learningPlanService.updatePlan(userEmail, plan);
             return ResponseEntity.ok(updatedPlan);
@@ -64,7 +70,9 @@ public class LearningPlanController {
     @DeleteMapping("/{planId}")
     public ResponseEntity<?> deletePlan(@PathVariable String planId) {
         try {
-            learningPlanService.deletePlan(planId);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            learningPlanService.deletePlan(planId, userEmail);
             return ResponseEntity.ok("Learning plan deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

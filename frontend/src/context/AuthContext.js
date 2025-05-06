@@ -9,7 +9,10 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        console.log('Retrieved user from localStorage:', parsedUser);
+        console.log('Token present:', !!parsedUser.token);
+        setUser(parsedUser);
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('user');
@@ -18,6 +21,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
+    console.log('Setting user data:', userData);
+    console.log('Token present:', !!userData.token);
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };

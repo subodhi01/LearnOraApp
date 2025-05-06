@@ -86,10 +86,14 @@ public class LearningPlanService {
         return learningPlanRepository.save(existingPlan);
     }
 
-    public void deletePlan(String planId) throws Exception {
-        if (!learningPlanRepository.existsById(planId)) {
-            throw new Exception("Learning plan not found");
+    public void deletePlan(String planId, String userEmail) throws Exception {
+        LearningPlanModel plan = learningPlanRepository.findById(planId)
+                .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        if (!plan.getUserEmail().equals(userEmail)) {
+            throw new Exception("You don't have permission to delete this plan");
         }
+
         learningPlanRepository.deleteById(planId);
     }
 

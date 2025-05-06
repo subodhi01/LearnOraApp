@@ -22,17 +22,17 @@ const Community = () => {
     {
       postId: 'post2',
       title: 'Tips for Effective Online Learning',
-      content: 'Share your best tips for staying focused and productive while learning online. Let’s help each other succeed!',
+      content: "Share your best tips for staying focused and productive while learning online. Let's help each other succeed!"
     },
     {
       postId: 'post3',
       title: 'Favorite Learning Resources',
-      content: 'What are your go-to resources for learning new skills? Books, websites, or courses—share them here!',
+      content: 'What are your go-to resources for learning new skills? Books, websites, or courses—share them here!'
     },
     {
       postId: 'post4',
       title: 'Community Q&A',
-      content: 'Have a question about learning or a specific topic? Ask away, and let’s see how we can help each other.',
+      content: "Have a question about learning or a specific topic? Ask away, and let's see how we can help each other."
     },
   ];
 
@@ -64,7 +64,7 @@ const Community = () => {
     try {
       const commentData = {
         postId,
-        userId: user._id, // Assume backend returns _id in user object
+        userId: user.email,
         username: `${user.firstName} ${user.lastName}`,
         text: newComment[postId],
       };
@@ -112,7 +112,7 @@ const Community = () => {
     if (!confirmed) return;
 
     try {
-      await deleteComment(commentId, user._id);
+      await deleteComment(commentId, user.email);
       setComments((prev) => ({
         ...prev,
         [postId]: prev[postId].filter((c) => c.id !== commentId),
@@ -168,7 +168,7 @@ const Community = () => {
                   ) : (
                     <p className="comment-text">{comment.text}</p>
                   )}
-                  {user && user._id === comment.userId && editingComment !== comment.id && (
+                  {user && user.email === comment.userId && editingComment !== comment.id && (
                     <div className="comment-actions">
                       <button
                         onClick={() => handleEditComment(comment)}

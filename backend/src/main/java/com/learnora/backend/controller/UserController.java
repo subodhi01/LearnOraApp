@@ -6,35 +6,44 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @PostMapping("/auth/signup")
+    @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody UserModel user) {
         try {
-            UserModel savedUser = userService.signup(user);
-            return ResponseEntity.ok(savedUser);
+            UserModel createdUser = userService.signup(user);
+            return ResponseEntity.ok(createdUser);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PostMapping("/auth/signin")
-    public ResponseEntity<?> login(@RequestBody UserModel user) {
+    @PostMapping("/signin")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
-            UserModel loggedInUser = userService.login(user.getEmail(), user.getPassword());
-            return ResponseEntity.ok(loggedInUser);
+            String email = credentials.get("email");
+            String password = credentials.get("password");
+            
+            if (email == null || password == null) {
+                return ResponseEntity.badRequest().body("Email and password are required");
+            }
+
+            Map<String, Object> response = userService.login(email, password);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @GetMapping("/user/profile")
+    @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(@RequestParam String email) {
         try {
             UserModel user = userService.getUserProfile(email);
@@ -44,54 +53,30 @@ public class UserController {
         }
     }
 
-    @PutMapping("/user/profile")
-    public ResponseEntity<?> updateUserProfile(@RequestBody UserModel updates) {
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateUserProfile(@RequestParam String email, @RequestBody UserModel updates) {
         try {
-            UserModel updatedUser = userService.updateUserProfile(updates.getEmail(), updates);
+            UserModel updatedUser = userService.updateUserProfile(email, updates);
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PutMapping("/user/password")
-    public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request) {
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestParam String email, @RequestBody Map<String, String> passwords) {
         try {
-            userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
-            return ResponseEntity.ok("Password changed successfully");
+            String oldPassword = passwords.get("oldPassword");
+            String newPassword = passwords.get("newPassword");
+            
+            if (oldPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest().body("Old password and new password are required");
+            }
+
+            userService.changePassword(email, oldPassword, newPassword);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // DTO for password change request
-    public static class PasswordChangeRequest {
-        private String email;
-        private String oldPassword;
-        private String newPassword;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getOldPassword() {
-            return oldPassword;
-        }
-
-        public void setOldPassword(String oldPassword) {
-            this.oldPassword = oldPassword;
-        }
-
-        public String getNewPassword() {
-            return newPassword;
-        }
-
-        public void setNewPassword(String newPassword) {
-            this.newPassword = newPassword;
         }
     }
 }

@@ -78,7 +78,13 @@ const Courses = () => {
   };
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user object found');
+      return;
+    }
+
+    console.log('User object:', user);
+    console.log('User email:', user.email);
 
     if (!text.trim()) {
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: 'Comment cannot be empty' }));
@@ -88,11 +94,12 @@ const Courses = () => {
     try {
       const commentData = {
         postId: planId,
-        userId: user._id,
+        userId: user.email,
         username: `${user.firstName} ${user.lastName}`,
         text: text,
         parentId: parentId
       };
+      console.log('Sending comment data:', commentData);
       const savedComment = await createComment(commentData);
       
       if (parentId) {
@@ -158,7 +165,7 @@ const Courses = () => {
     }
 
     try {
-      await deleteComment(commentId, user._id);
+      await deleteComment(commentId, user.email);
       
       // Remove the comment from the state
       setComments(prev => ({
@@ -199,7 +206,7 @@ const Courses = () => {
   const CommentSection = ({ planId, comment, level = 0 }) => {
     const isReplying = replyingTo === comment.id;
     const isEditing = editingComment === comment.id;
-    const isOwner = user && comment.userId === user._id;
+    const isOwner = user && comment.userId === user.email;
 
     return (
       <div className={`comment-container level-${level}`}>

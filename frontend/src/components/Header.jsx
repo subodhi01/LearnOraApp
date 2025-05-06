@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import './Header.css';
 
 const Header = () => {
@@ -30,24 +31,27 @@ const Header = () => {
 
         <div className="auth-section">
           {user ? (
-            <div className="user-menu">
-              <div className="user-avatar">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </div>
-              <div className="user-dropdown">
-                <div className="user-info">
-                  <span className="user-name">{user?.firstName} {user?.lastName}</span>
-                  <span className="user-email">{user?.email}</span>
+            <div className="user-section">
+              <NotificationBell />
+              <div className="user-menu">
+                <div className="user-avatar">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
-                <div className="dropdown-menu">
-                  <Link to="/dashboard" className="dropdown-item">
-                    <i className="fas fa-user"></i>
-                    Dashboard
-                  </Link>
-                  <button onClick={handleLogout} className="dropdown-item logout">
-                    <i className="fas fa-sign-out-alt"></i>
-                    Logout
-                  </button>
+                <div className="user-dropdown">
+                  <div className="user-info">
+                    <span className="user-name">{user?.firstName} {user?.lastName}</span>
+                    <span className="user-email">{user?.email}</span>
+                  </div>
+                  <div className="dropdown-menu">
+                    <Link to="/dashboard" className="dropdown-item">
+                      <i className="fas fa-user"></i>
+                      Dashboard
+                    </Link>
+                    <button onClick={handleLogout} className="dropdown-item logout">
+                      <i className="fas fa-sign-out-alt"></i>
+                      Logout
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

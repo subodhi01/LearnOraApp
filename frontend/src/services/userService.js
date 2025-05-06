@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthHeaders } from './authService';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -10,7 +11,8 @@ export const getUserProfile = async () => {
     }
 
     const response = await axios.get(`${API_URL}/user/profile`, {
-      params: { email: user.email }
+      params: { email: user.email },
+      headers: getAuthHeaders()
     });
     return response.data;
   } catch (error) {
@@ -40,7 +42,9 @@ export const updateUserProfile = async (profileData) => {
 
     console.log('Sending update data:', updateData); // Debug log
 
-    const response = await axios.put(`${API_URL}/user/profile`, updateData);
+    const response = await axios.put(`${API_URL}/user/profile`, updateData, {
+      headers: getAuthHeaders()
+    });
     console.log('Update response:', response.data); // Debug log
     
     // Update the user in localStorage with the new data
@@ -77,6 +81,8 @@ export const changePassword = async (passwordData) => {
       email: user.email,
       oldPassword: passwordData.oldPassword,
       newPassword: passwordData.newPassword
+    }, {
+      headers: getAuthHeaders()
     });
     return response.data;
   } catch (error) {
