@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
@@ -7,11 +7,27 @@ import './Header.css';
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="header">
@@ -33,21 +49,27 @@ const Header = () => {
           {user ? (
             <div className="user-section">
               <NotificationBell />
-              <div className="user-menu">
-                <div className="user-avatar">
+              <div className="user-menu" ref={dropdownRef}>
+                <div 
+                  className="user-avatar"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
-                <div className="user-dropdown">
+                <div className={`user-dropdown ${isDropdownOpen ? 'show' : ''}`}>
                   <div className="user-info">
                     <span className="user-name">{user?.firstName} {user?.lastName}</span>
                     <span className="user-email">{user?.email}</span>
                   </div>
                   <div className="dropdown-menu">
-                    <Link to="/dashboard" className="dropdown-item">
+                    <Link to="/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                       <i className="fas fa-user"></i>
                       Dashboard
                     </Link>
-                    <button onClick={handleLogout} className="dropdown-item logout">
+                    <button onClick={() => {
+                      setIsDropdownOpen(false);
+                      handleLogout();
+                    }} className="dropdown-item logout">
                       <i className="fas fa-sign-out-alt"></i>
                       Logout
                     </button>
