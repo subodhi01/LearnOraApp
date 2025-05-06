@@ -4,11 +4,45 @@ import learningPlanService from '../../services/learningPlanService';
 import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
 
+const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
+  const [inputValue, setInputValue] = useState(initialValue);
+
+  const handleSubmit = () => {
+    onSubmit(inputValue);
+    setInputValue('');
+  };
+
+  const handleCancel = () => {
+    onCancel();
+    setInputValue('');
+  };
+
+  return (
+    <div className="comment-input-container">
+      <textarea
+        placeholder={placeholder}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        className="comment-input"
+      />
+      <div className="comment-actions">
+        <button onClick={handleSubmit} className="submit-comment-button">
+          {initialValue ? 'Save' : 'Post Comment'}
+        </button>
+        {onCancel && (
+          <button onClick={handleCancel} className="cancel-button">
+            Cancel
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Courses = () => {
   const [sharedPlans, setSharedPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState({});
-  const [newComment, setNewComment] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [errors, setErrors] = useState({});
@@ -42,12 +76,11 @@ const Courses = () => {
     }
   };
 
-  const handleCommentSubmit = async (planId, parentId = null) => {
+  const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) return;
 
-    const commentKey = parentId ? `${planId}-${parentId}` : planId;
-    if (!newComment[commentKey]?.trim()) {
-      setErrors(prev => ({ ...prev, [commentKey]: 'Comment cannot be empty' }));
+    if (!text.trim()) {
+      setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: 'Comment cannot be empty' }));
       return;
     }
 
@@ -56,13 +89,12 @@ const Courses = () => {
         postId: planId,
         userId: user._id,
         username: `${user.firstName} ${user.lastName}`,
-        text: newComment[commentKey],
+        text: text,
         parentId: parentId
       };
       const savedComment = await createComment(commentData);
       
       if (parentId) {
-        // Update the parent comment's replies
         setComments(prev => ({
           ...prev,
           [planId]: prev[planId].map(comment => 
@@ -72,19 +104,17 @@ const Courses = () => {
           )
         }));
       } else {
-        // Add as a new top-level comment
         setComments(prev => ({
           ...prev,
           [planId]: [...(prev[planId] || []), savedComment],
         }));
       }
       
-      setNewComment(prev => ({ ...prev, [commentKey]: '' }));
-      setErrors(prev => ({ ...prev, [commentKey]: '' }));
+      setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: '' }));
       setReplyingTo(null);
     } catch (error) {
       console.error('Error creating comment:', error);
-      setErrors(prev => ({ ...prev, [commentKey]: error.message || 'Failed to post comment' }));
+      setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: error.message || 'Failed to post comment' }));
     }
   };
 
@@ -94,14 +124,12 @@ const Courses = () => {
     try {
       const updatedComment = await updateComment(commentId, { text: newText });
       
-      // Update the comment in the state
       setComments(prev => ({
         ...prev,
         [planId]: prev[planId].map(comment => {
           if (comment.id === commentId) {
             return { ...comment, text: newText };
           }
-          // Check replies
           if (comment.replies) {
             return {
               ...comment,
@@ -155,7 +183,6 @@ const Courses = () => {
   };
 
   const CommentSection = ({ planId, comment, level = 0 }) => {
-    const commentKey = `${planId}-${comment.id}`;
     const isReplying = replyingTo === comment.id;
     const isEditing = editingComment === comment.id;
     const isOwner = user && comment.userId === user._id;
@@ -171,35 +198,12 @@ const Courses = () => {
           </div>
           
           {isEditing ? (
-            <div className="edit-form">
-              <textarea
-                value={newComment[commentKey] || comment.text}
-                onChange={(e) =>
-                  setNewComment(prev => ({ ...prev, [commentKey]: e.target.value }))
-                }
-                className="comment-input"
-              />
-              <div className="edit-actions">
-                <button
-                  onClick={() => handleUpdateComment(planId, comment.id, newComment[commentKey])}
-                  className="submit-comment-button"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingComment(null);
-                    setNewComment(prev => ({ ...prev, [commentKey]: '' }));
-                  }}
-                  className="cancel-button"
-                >
-                  Cancel
-                </button>
-              </div>
-              {errors[commentKey] && (
-                <span className="error-message">{errors[commentKey]}</span>
-              )}
-            </div>
+            <CommentInput
+              initialValue={comment.text}
+              onSubmit={(text) => handleUpdateComment(planId, comment.id, text)}
+              onCancel={() => setEditingComment(null)}
+              placeholder="Edit your comment..."
+            />
           ) : (
             <>
               <p className="comment-text">{comment.text}</p>
@@ -216,10 +220,7 @@ const Courses = () => {
                   <>
                     <button
                       className="edit-button"
-                      onClick={() => {
-                        setEditingComment(comment.id);
-                        setNewComment(prev => ({ ...prev, [commentKey]: comment.text }));
-                      }}
+                      onClick={() => setEditingComment(comment.id)}
                     >
                       Edit
                     </button>
@@ -238,22 +239,13 @@ const Courses = () => {
 
         {isReplying && (
           <div className="reply-form">
-            <textarea
+            <CommentInput
+              onSubmit={(text) => handleCommentSubmit(planId, comment.id, text)}
+              onCancel={() => setReplyingTo(null)}
               placeholder="Write a reply..."
-              value={newComment[commentKey] || ''}
-              onChange={(e) =>
-                setNewComment(prev => ({ ...prev, [commentKey]: e.target.value }))
-              }
-              className="comment-input"
             />
-            <button
-              onClick={() => handleCommentSubmit(planId, comment.id)}
-              className="submit-comment-button"
-            >
-              Post Reply
-            </button>
-            {errors[commentKey] && (
-              <span className="error-message">{errors[commentKey]}</span>
+            {errors[`${planId}-${comment.id}`] && (
+              <span className="error-message">{errors[`${planId}-${comment.id}`]}</span>
             )}
           </div>
         )}
@@ -329,22 +321,12 @@ const Courses = () => {
 
                   {user ? (
                     <div className="comment-form">
-                      <textarea
+                      <CommentInput
+                        onSubmit={(text) => handleCommentSubmit(plan.id, null, text)}
                         placeholder="Add a comment..."
-                        value={newComment[plan.id] || ''}
-                        onChange={(e) =>
-                          setNewComment(prev => ({ ...prev, [plan.id]: e.target.value }))
-                        }
-                        className="comment-input"
                       />
-                      <button
-                        onClick={() => handleCommentSubmit(plan.id)}
-                        className="submit-comment-button"
-                      >
-                        Post Comment
-                      </button>
-                      {errors[plan.id] && (
-                        <span className="error-message">{errors[plan.id]}</span>
+                      {errors[`${plan.id}-new`] && (
+                        <span className="error-message">{errors[`${plan.id}-new`]}</span>
                       )}
                     </div>
                   ) : (
