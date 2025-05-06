@@ -49,6 +49,9 @@ public class CommentService {
             throw new Exception("Comment text is required");
         }
 
+        // Set the creation timestamp
+        comment.setCreatedAt(java.time.LocalDateTime.now());
+
         // Verify user exists
         UserModel user = userRepository.findByEmail(comment.getUserId())
             .orElseThrow(() -> new Exception("User not found"));
