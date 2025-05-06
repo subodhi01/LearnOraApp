@@ -79,4 +79,19 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @DeleteMapping("/profile")
+    public ResponseEntity<?> deleteUserProfile(@RequestParam String email, @RequestBody Map<String, String> request) {
+        try {
+            String password = request.get("password");
+            if (password == null) {
+                return ResponseEntity.badRequest().body("Password is required for account deletion");
+            }
+
+            userService.deleteUserProfile(email, password);
+            return ResponseEntity.ok("User profile deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

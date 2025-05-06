@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile, updateUserProfile, changePassword } from '../services/userService';
+import { getUserProfile, updateUserProfile, changePassword, deleteUserProfile } from '../services/userService';
+import { useNavigate } from 'react-router-dom';
 import './Settings.css';
+import axios from 'axios';
+import { getAuthHeaders } from '../services/authService';
+
+const API_URL = 'http://localhost:8000/api';
 
 const Settings = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   // Form states
   const [profileForm, setProfileForm] = useState({
@@ -95,6 +103,33 @@ const Settings = () => {
     }
   };
 
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    if (!deletePassword) {
+      setError('Please enter your password to confirm deletion');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Proceed with deletion, passing the password for verification
+      await deleteUserProfile(deletePassword);
+      logout();
+      navigate('/');
+    } catch (err) {
+      console.error('Delete account error:', err);
+      if (err.message.includes('Authentication failed')) {
+        setError('Session expired. Please log in again.');
+      } else {
+        setError(err.message || 'Failed to delete account');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!authUser) {
     return <div className="settings-container">Please log in to view your settings.</div>;
   }
@@ -117,19 +152,25 @@ const Settings = () => {
           className={`tab-button ${activeTab === 'account' ? 'active' : ''}`}
           onClick={() => setActiveTab('account')}
         >
-          Account Details
+          Account
         </button>
         <button
           className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
           onClick={() => setActiveTab('profile')}
         >
-          Edit Profile
+          Profile
         </button>
         <button
           className={`tab-button ${activeTab === 'password' ? 'active' : ''}`}
           onClick={() => setActiveTab('password')}
         >
-          Change Password
+          Password
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'delete' ? 'active' : ''}`}
+          onClick={() => setActiveTab('delete')}
+        >
+          Delete Account
         </button>
       </div>
 
@@ -232,6 +273,55 @@ const Settings = () => {
               {loading ? 'Changing Password...' : 'Change Password'}
             </button>
           </form>
+        )}
+
+        {activeTab === 'delete' && (
+          <div className="delete-account-section">
+            <h2>Delete Account</h2>
+            <p className="warning-text">
+              Warning: This action cannot be undone. All your data will be permanently deleted.
+            </p>
+            
+            {!showDeleteConfirm ? (
+              <button
+                className="delete-account-button"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete My Account
+              </button>
+            ) : (
+              <form onSubmit={handleDeleteAccount} className="delete-confirm-form">
+                <div className="form-group">
+                  <label>Enter your password to confirm deletion:</label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="delete-actions">
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeletePassword('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="confirm-delete-button"
+                    disabled={loading}
+                  >
+                    {loading ? 'Deleting...' : 'Confirm Deletion'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         )}
       </div>
     </div>

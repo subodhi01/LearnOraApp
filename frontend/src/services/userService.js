@@ -125,3 +125,46 @@ export const changePassword = async (passwordData) => {
     throw new Error(error.response?.data || 'Failed to change password');
   }
 };
+
+export const deleteUserProfile = async (password) => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.email) {
+      throw new Error('User email not found');
+    }
+
+    console.log('Making delete request with headers:', getAuthHeaders()); // Debug log
+
+    const response = await axios.delete(`${API_URL}/auth/profile`, {
+      params: { email: user.email },
+      data: { password }, // Include password in request body
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('Delete response:', response.data); // Debug log
+    
+    // Clear user data from localStorage after successful deletion
+    localStorage.removeItem('user');
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting profile:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.config?.headers
+    });
+    if (error.response?.status === 403) {
+      throw new Error('Authentication failed. Please log in again.');
+    }
+    throw new Error(error.response?.data || 'Failed to delete profile');
+  }
+};
