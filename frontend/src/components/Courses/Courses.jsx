@@ -46,6 +46,7 @@ const Courses = () => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [errors, setErrors] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
   const { user } = useAuth();
 
   useEffect(() => {
@@ -182,6 +183,19 @@ const Courses = () => {
     }
   };
 
+  const toggleComments = async (planId) => {
+    if (!expandedComments[planId]) {
+      // If comments are not loaded yet, fetch them
+      if (!comments[planId]) {
+        await fetchComments(planId);
+      }
+    }
+    setExpandedComments(prev => ({
+      ...prev,
+      [planId]: !prev[planId]
+    }));
+  };
+
   const CommentSection = ({ planId, comment, level = 0 }) => {
     const isReplying = replyingTo === comment.id;
     const isEditing = editingComment === comment.id;
@@ -306,33 +320,49 @@ const Courses = () => {
 
                 {/* Comments Section */}
                 <div className="comments-section">
-                  <h4>Comments</h4>
-                  {comments[plan.id]?.length > 0 ? (
-                    comments[plan.id].map((comment) => (
-                      <CommentSection
-                        key={comment.id}
-                        planId={plan.id}
-                        comment={comment}
-                      />
-                    ))
-                  ) : (
-                    <p>No comments yet. Be the first to comment!</p>
-                  )}
+                  <div className="comments-header">
+                    <h4>Comments</h4>
+                    <button
+                      className="toggle-comments-button"
+                      onClick={() => toggleComments(plan.id)}
+                    >
+                      {expandedComments[plan.id] ? 'Hide Comments' : 'Show Comments'}
+                      <span className="comment-count">
+                        {comments[plan.id]?.length || 0}
+                      </span>
+                    </button>
+                  </div>
 
-                  {user ? (
-                    <div className="comment-form">
-                      <CommentInput
-                        onSubmit={(text) => handleCommentSubmit(plan.id, null, text)}
-                        placeholder="Add a comment..."
-                      />
-                      {errors[`${plan.id}-new`] && (
-                        <span className="error-message">{errors[`${plan.id}-new`]}</span>
+                  {expandedComments[plan.id] && (
+                    <>
+                      {comments[plan.id]?.length > 0 ? (
+                        comments[plan.id].map((comment) => (
+                          <CommentSection
+                            key={comment.id}
+                            planId={plan.id}
+                            comment={comment}
+                          />
+                        ))
+                      ) : (
+                        <p>No comments yet. Be the first to comment!</p>
                       )}
-                    </div>
-                  ) : (
-                    <p className="login-prompt">
-                      Please <a href="/login">log in</a> to add a comment.
-                    </p>
+
+                      {user ? (
+                        <div className="comment-form">
+                          <CommentInput
+                            onSubmit={(text) => handleCommentSubmit(plan.id, null, text)}
+                            placeholder="Add a comment..."
+                          />
+                          {errors[`${plan.id}-new`] && (
+                            <span className="error-message">{errors[`${plan.id}-new`]}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="login-prompt">
+                          Please <a href="/login">log in</a> to add a comment.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
