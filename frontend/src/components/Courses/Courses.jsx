@@ -105,16 +105,50 @@ const Courses = () => {
     const commentId = params.get('commentId');
     const courseId = params.get('courseId');
     
-    if (commentId && courseId) {
-      setTargetCommentId(commentId);
+    if (courseId && !loading && sharedPlans.length > 0) {
       setTargetCourseId(courseId);
+      
+      // If there's a commentId, set it for comment navigation
+      if (commentId) {
+        setTargetCommentId(commentId);
+      }
+
+      // Wait for the component to render and then scroll to the target course
+      const scrollToCourse = () => {
+        const courseElement = document.querySelector(`[data-course-id="${courseId}"]`);
+        if (courseElement) {
+          // Calculate the position to scroll to, accounting for any fixed headers
+          const headerOffset = 80; // Adjust this value based on your header height
+          const elementPosition = courseElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+          
+          // Add highlight effect
+          courseElement.classList.add('highlight-course');
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            courseElement.classList.remove('highlight-course');
+          }, 2000);
+        }
+      };
+
+      // Try to scroll immediately
+      scrollToCourse();
+
+      // Also try after a short delay to ensure the component is fully rendered
+      setTimeout(scrollToCourse, 100);
     }
-  }, [location.search]);
+  }, [location.search, sharedPlans, loading]);
 
   // Separate effect for handling target comment navigation
   useEffect(() => {
     const navigateToComment = async () => {
-      if (!targetCommentId || !targetCourseId || !sharedPlans.length) return;
+      if (!targetCommentId || !targetCourseId || !sharedPlans.length || loading) return;
 
       // Wait for comments to be loaded
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -130,8 +164,15 @@ const Courses = () => {
       setTimeout(() => {
         const commentElement = document.querySelector(`[data-comment-id="${targetCommentId}"]`);
         if (commentElement) {
-          // Scroll the comment into view
-          commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Calculate the position to scroll to, accounting for any fixed headers
+          const headerOffset = 80; // Adjust this value based on your header height
+          const elementPosition = commentElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
           
           // Add highlight effect
           commentElement.classList.add('highlight-comment');
@@ -145,7 +186,7 @@ const Courses = () => {
     };
 
     navigateToComment();
-  }, [targetCommentId, targetCourseId, sharedPlans, comments]);
+  }, [targetCommentId, targetCourseId, sharedPlans, loading]);
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) {
@@ -610,7 +651,11 @@ const Courses = () => {
       ) : (
         <div className="courses-grid">
           {sharedPlans.map((plan) => (
-            <div key={plan.id} className="course-card">
+            <div 
+              key={plan.id} 
+              className="course-card"
+              data-course-id={plan.id}
+            >
               <div className="course-header">
                 <h3>{plan.title}</h3>
                 <span className="course-creator">
