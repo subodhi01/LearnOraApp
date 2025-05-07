@@ -3,8 +3,42 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8000/api/notifications';
 
 const getAuthHeaders = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  return user ? { 'Authorization': `Bearer ${user.token}` } : {};
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.token) {
+      console.error('No user token found in localStorage');
+      return {};
+    }
+    return {
+      'Authorization': `Bearer ${user.token}`,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Error getting auth headers:', error);
+    return {};
+  }
+};
+
+export const createNotification = async (notificationData) => {
+  try {
+    const headers = getAuthHeaders();
+    if (!headers.Authorization) {
+      throw new Error('Authentication required');
+    }
+
+    console.log('Creating notification with data:', notificationData);
+    console.log('Using headers:', headers);
+
+    const response = await axios.post(API_URL, notificationData, { headers });
+    console.log('Notification created successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating notification:', error.response?.data || error.message);
+    if (error.response?.status === 403) {
+      console.error('Authentication failed. Please check if you are logged in.');
+    }
+    throw error.response?.data || error.message;
+  }
 };
 
 export const getUserNotifications = async () => {

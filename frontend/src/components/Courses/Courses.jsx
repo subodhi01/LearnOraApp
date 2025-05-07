@@ -5,6 +5,7 @@ import { createComment, getCommentsByPostId, updateComment, deleteComment, toggl
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { reactionService } from '../../services/reactionService';
+import { createNotification } from '../../services/notificationService';
 import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 
 const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
@@ -301,6 +302,17 @@ const Courses = () => {
     try {
       setReactionError(null);
       const currentReaction = userReactions[planId];
+      const plan = sharedPlans.find(p => p.id === planId);
+      
+      if (!plan) {
+        throw new Error('Course not found');
+      }
+
+      // Check if user is authenticated
+      if (!user || !user.token) {
+        setReactionError('Please log in to react to courses');
+        return;
+      }
       
       if (currentReaction === reactionType) {
         // Remove reaction if clicking the same button
@@ -333,7 +345,11 @@ const Courses = () => {
       }
     } catch (error) {
       console.error('Error handling reaction:', error);
-      setReactionError('Failed to update reaction');
+      if (error.message === 'Authentication required') {
+        setReactionError('Please log in to react to courses');
+      } else {
+        setReactionError('Failed to update reaction. Please try again.');
+      }
     }
   };
 
