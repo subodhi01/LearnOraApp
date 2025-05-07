@@ -41,8 +41,8 @@ const Dashboard = () => {
             My Courses
           </Link>
           <Link 
-            to="/dashboard/progress" 
-            className={`nav-item ${location.pathname === '/dashboard/progress' ? 'active' : ''}`}
+            to="/dashboard/progressstarted" 
+            className={`nav-item ${location.pathname === '/dashboard/progressstarted' ? 'active' : ''}`}
           >
             <i className="fas fa-chart-line"></i>
             Progress

@@ -1,8 +1,10 @@
-package com.learnora.repository;
+package com.learnora.backend.repository;
 
-import com.learnora.model.ProgressTemplate;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
+
+import com.learnora.backend.model.ProgressTemplate;
+
 import java.util.List;
 import java.util.Optional;
 
