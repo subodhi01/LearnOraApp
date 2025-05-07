@@ -2,10 +2,13 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api/comments';
 
-// Get the auth token from localStorage
-const getAuthToken = () => {
+// Get auth headers
+const getAuthHeaders = () => {
   const user = JSON.parse(localStorage.getItem('user'));
-  return user?.token;
+  if (!user || !user.token) {
+    throw new Error('Authentication required. Please log in.');
+  }
+  return { 'Authorization': `Bearer ${user.token}` };
 };
 
 // Create axios instance with default config
@@ -19,13 +22,27 @@ const api = axios.create({
 // Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = getAuthToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const headers = getAuthHeaders();
+      config.headers = { ...config.headers, ...headers };
+      return config;
+    } catch (error) {
+      return Promise.reject(error);
     }
-    return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403) {
+      console.error('Authentication failed. Please check if you are logged in.');
+      throw new Error('Authentication failed. Please log in to continue.');
+    }
     return Promise.reject(error);
   }
 );
@@ -43,7 +60,7 @@ export const createComment = async (commentData) => {
       status: error.response?.status,
       requestData: commentData
     });
-    throw new Error(error.response?.data || 'Failed to create comment');
+    throw new Error(error.response?.data?.message || 'Failed to create comment');
   }
 };
 
@@ -57,13 +74,13 @@ export const getCommentsByPostId = async (postId) => {
       response: error.response?.data,
       status: error.response?.status,
     });
-    throw new Error(error.response?.data || 'Failed to fetch comments');
+    throw new Error(error.response?.data?.message || 'Failed to fetch comments');
   }
 };
 
-export const updateComment = async (commentId, updates) => {
+export const updateComment = async (commentId, commentData) => {
   try {
-    const response = await api.put(`/${commentId}`, updates);
+    const response = await api.put(`/${commentId}`, commentData);
     return response.data;
   } catch (error) {
     console.error('Error updating comment:', {
@@ -71,13 +88,15 @@ export const updateComment = async (commentId, updates) => {
       response: error.response?.data,
       status: error.response?.status,
     });
-    throw new Error(error.response?.data || 'Failed to update comment');
+    throw new Error(error.response?.data?.message || 'Failed to update comment');
   }
 };
 
 export const deleteComment = async (commentId, userEmail) => {
   try {
-    const response = await api.delete(`/comments/${commentId}?userId=${userEmail}`);
+    const response = await api.delete(`/${commentId}`, {
+      params: { userId: userEmail }
+    });
     return response.data;
   } catch (error) {
     console.error('Error deleting comment:', {
@@ -85,13 +104,18 @@ export const deleteComment = async (commentId, userEmail) => {
       response: error.response?.data,
       status: error.response?.status,
     });
-    throw new Error(error.response?.data || 'Failed to delete comment');
+    if (error.message === 'Authentication required. Please log in.') {
+      throw new Error('Please log in to delete comments');
+    }
+    throw new Error(error.response?.data?.message || 'Failed to delete comment');
   }
 };
 
 export const toggleCommentVisibility = async (commentId, userEmail) => {
   try {
-    const response = await api.post(`/${commentId}/toggle-visibility?userId=${userEmail}`);
+    const response = await api.post(`/${commentId}/toggle-visibility`, null, {
+      params: { userId: userEmail }
+    });
     return response.data;
   } catch (error) {
     console.error('Error toggling comment visibility:', {
@@ -99,6 +123,6 @@ export const toggleCommentVisibility = async (commentId, userEmail) => {
       response: error.response?.data,
       status: error.response?.status,
     });
-    throw new Error(error.response?.data || 'Failed to toggle comment visibility');
+    throw new Error(error.response?.data?.message || 'Failed to toggle comment visibility');
   }
 };

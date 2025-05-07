@@ -7,6 +7,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { reactionService } from '../../services/reactionService';
 import { createNotification } from '../../services/notificationService';
 import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
+import ReactionSection from '../Reactions/ReactionSection';
+import CommentSection from '../Comments/CommentSection';
 
 const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
   const [inputValue, setInputValue] = useState(initialValue);
@@ -108,7 +110,6 @@ const Courses = () => {
     if (courseId && !loading && sharedPlans.length > 0) {
       setTargetCourseId(courseId);
       
-      // If there's a commentId, set it for comment navigation
       if (commentId) {
         setTargetCommentId(commentId);
       }
@@ -117,8 +118,7 @@ const Courses = () => {
       const scrollToCourse = () => {
         const courseElement = document.querySelector(`[data-course-id="${courseId}"]`);
         if (courseElement) {
-          // Calculate the position to scroll to, accounting for any fixed headers
-          const headerOffset = 80; // Adjust this value based on your header height
+          const headerOffset = 80;
           const elementPosition = courseElement.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -127,66 +127,18 @@ const Courses = () => {
             behavior: 'smooth'
           });
           
-          // Add highlight effect
           courseElement.classList.add('highlight-course');
           
-          // Remove highlight after animation
           setTimeout(() => {
             courseElement.classList.remove('highlight-course');
           }, 2000);
         }
       };
 
-      // Try to scroll immediately
       scrollToCourse();
-
-      // Also try after a short delay to ensure the component is fully rendered
       setTimeout(scrollToCourse, 100);
     }
   }, [location.search, sharedPlans, loading]);
-
-  // Separate effect for handling target comment navigation
-  useEffect(() => {
-    const navigateToComment = async () => {
-      if (!targetCommentId || !targetCourseId || !sharedPlans.length || loading) return;
-
-      // Wait for comments to be loaded
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Find the target plan
-      const targetPlan = sharedPlans.find(plan => plan.id === targetCourseId);
-      if (!targetPlan) return;
-
-      // Expand the comments section
-      setExpandedComments(prev => ({ ...prev, [targetPlan.id]: true }));
-
-      // Wait for the DOM to update
-      setTimeout(() => {
-        const commentElement = document.querySelector(`[data-comment-id="${targetCommentId}"]`);
-        if (commentElement) {
-          // Calculate the position to scroll to, accounting for any fixed headers
-          const headerOffset = 80; // Adjust this value based on your header height
-          const elementPosition = commentElement.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-          window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-          });
-          
-          // Add highlight effect
-          commentElement.classList.add('highlight-comment');
-          
-          // Remove highlight after animation
-          setTimeout(() => {
-            commentElement.classList.remove('highlight-comment');
-          }, 2000);
-        }
-      }, 100);
-    };
-
-    navigateToComment();
-  }, [targetCommentId, targetCourseId, sharedPlans, loading]);
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) {
@@ -217,9 +169,24 @@ const Courses = () => {
         [planId]: updatedComments
       }));
       
+      // Create notification for the course owner
+      const plan = sharedPlans.find(p => p.id === planId);
+      if (plan && plan.userEmail !== user.email) {
+        const message = parentId 
+          ? `${user.firstName} ${user.lastName} replied to a comment on your course '${plan.title}'`
+          : `${user.firstName} ${user.lastName} commented on your course '${plan.title}'`;
+        
+        await createNotification(
+          plan.userEmail,
+          'COMMENT',
+          message,
+          planId,
+          savedComment.id
+        );
+      }
+      
       // Clear any errors and reset reply state
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: '' }));
-      setReplyingTo(null);
     } catch (error) {
       console.error('Error creating comment:', error);
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: error.message || 'Failed to post comment' }));
@@ -272,9 +239,8 @@ const Courses = () => {
         ...prev,
         [planId]: prev[planId].map(comment => {
           if (comment.id === commentId) {
-            return null; // Remove the comment
+            return null;
           }
-          // Check replies
           if (comment.replies) {
             return {
               ...comment,
@@ -282,7 +248,7 @@ const Courses = () => {
             };
           }
           return comment;
-        }).filter(Boolean) // Remove null entries
+        }).filter(Boolean)
       }));
     } catch (error) {
       console.error('Error deleting comment:', error);
@@ -290,52 +256,33 @@ const Courses = () => {
     }
   };
 
-  const toggleComments = async (planId) => {
-    if (!expandedComments[planId]) {
-      // If comments are not loaded yet, fetch them
-      if (!comments[planId]) {
-        try {
-          const planComments = await getCommentsByPostId(planId);
-          setComments(prev => ({ ...prev, [planId]: planComments }));
-        } catch (error) {
-          console.error(`Error fetching comments for plan ${planId}:`, error);
-          setErrors(prev => ({ ...prev, [planId]: 'Failed to load comments' }));
-        }
-      }
-    }
-    setExpandedComments(prev => ({
-      ...prev,
-      [planId]: !prev[planId]
-    }));
-  };
+  const handleToggleCommentVisibility = async (planId, commentId) => {
+    if (!user) return;
 
-  const loadReactions = async (plan) => {
     try {
-      setReactionError(null);
-      const counts = await reactionService.getReactionCounts('COURSE', plan.id);
-      const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
+      await toggleCommentVisibility(commentId, user.email);
       
-      setReactions(prev => ({
+      // Update the comment in the state
+      setComments(prev => ({
         ...prev,
-        [plan.id]: counts
-      }));
-      
-      setUserReactions(prev => ({
-        ...prev,
-        [plan.id]: userReaction
+        [planId]: prev[planId].map(comment => {
+          if (comment.id === commentId) {
+            return { ...comment, hidden: !comment.hidden };
+          }
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply =>
+                reply.id === commentId ? { ...reply, hidden: !reply.hidden } : reply
+              )
+            };
+          }
+          return comment;
+        })
       }));
     } catch (error) {
-      console.error('Error loading reactions:', error);
-      setReactionError('Failed to load reactions');
-      // Set default values on error
-      setReactions(prev => ({
-        ...prev,
-        [plan.id]: { likes: 0, dislikes: 0 }
-      }));
-      setUserReactions(prev => ({
-        ...prev,
-        [plan.id]: null
-      }));
+      console.error('Error toggling comment visibility:', error);
+      setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to toggle comment visibility' }));
     }
   };
 
@@ -349,12 +296,11 @@ const Courses = () => {
         throw new Error('Course not found');
       }
 
-      // Check if user is authenticated
       if (!user || !user.token) {
         setReactionError('Please log in to react to courses');
         return;
       }
-      
+
       if (currentReaction === reactionType) {
         // Remove reaction if clicking the same button
         await reactionService.removeReaction('COURSE', planId, user.email);
@@ -394,22 +340,7 @@ const Courses = () => {
     }
   };
 
-  // Add this useEffect to test the connection
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        await reactionService.testConnection();
-        console.log('Reaction service connection successful');
-      } catch (error) {
-        console.error('Reaction service connection failed:', error);
-        setReactionError('Unable to connect to the reaction service. Please make sure the backend is running.');
-      }
-    };
-
-    testConnection();
-  }, []);
-
-  // Update the loadReactions function
+  // Load reactions
   useEffect(() => {
     const loadReactions = async () => {
       if (sharedPlans.length > 0) {
@@ -418,20 +349,16 @@ const Courses = () => {
         
         for (const plan of sharedPlans) {
           try {
-            console.log('Loading reactions for plan:', plan.id);
             const counts = await reactionService.getReactionCounts('COURSE', plan.id);
-            console.log('Reaction counts:', counts);
             reactionsData[plan.id] = counts;
             
             if (user) {
               const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
-              console.log('User reaction:', userReaction);
               userReactionsData[plan.id] = userReaction;
             }
           } catch (error) {
             console.error('Error loading reactions for plan:', plan.id, error);
             setReactionError('Unable to load reactions. Please make sure the backend server is running.');
-            // Set default values for this plan
             reactionsData[plan.id] = { likes: 0, dislikes: 0 };
             userReactionsData[plan.id] = null;
           }
@@ -444,188 +371,6 @@ const Courses = () => {
 
     loadReactions();
   }, [sharedPlans, user]);
-
-  const CommentSection = ({ planId, comment, level = 0 }) => {
-    const isReplying = replyingTo === comment.id;
-    const isEditing = editingComment === comment.id;
-    const isOwner = user && comment.userId === user.email;
-    const isCourseOwner = user && sharedPlans.find(plan => plan.id === planId)?.userEmail === user.email;
-    const planReactions = reactions[planId] || { likes: 0, dislikes: 0 };
-    const userReaction = userReactions[planId];
-
-    const handleReplyClick = () => {
-      setReplyingTo(isReplying ? null : comment.id);
-      setErrors(prev => ({ ...prev, [`${planId}-${comment.id}`]: '' }));
-    };
-
-    const handleToggleVisibility = async () => {
-      if (!user) return;
-
-      try {
-        await toggleCommentVisibility(comment.id, user.email);
-        
-        // Update the comment in the state
-        setComments(prev => ({
-          ...prev,
-          [planId]: prev[planId].map(c => {
-            if (c.id === comment.id) {
-              return { ...c, hidden: !c.hidden };
-            }
-            if (c.replies) {
-              return {
-                ...c,
-                replies: c.replies.map(reply =>
-                  reply.id === comment.id ? { ...reply, hidden: !reply.hidden } : reply
-                )
-              };
-            }
-            return c;
-          })
-        }));
-      } catch (error) {
-        console.error('Error toggling comment visibility:', error);
-        setErrors(prev => ({ ...prev, [comment.id]: error.message || 'Failed to toggle comment visibility' }));
-      }
-    };
-
-    // Don't render if the comment is hidden and user is not course owner
-    if (comment.hidden && !isCourseOwner) {
-      return null;
-    }
-
-    return (
-      <div 
-        className={`comment-container level-${level} ${comment.hidden ? 'hidden-comment' : ''}`}
-        data-comment-id={comment.id}
-      >
-        <div className="comment">
-          <div className="comment-header">
-            <span className="comment-username">{comment.username}</span>
-            <span className="comment-date">
-              {new Date(comment.createdAt).toLocaleDateString()}
-            </span>
-            {comment.hidden && isCourseOwner && (
-              <span className="hidden-badge">Hidden</span>
-            )}
-          </div>
-          
-          {isEditing ? (
-            <CommentInput
-              initialValue={comment.text}
-              onSubmit={(text) => handleUpdateComment(planId, comment.id, text)}
-              onCancel={() => setEditingComment(null)}
-              placeholder="Edit your comment..."
-            />
-          ) : (
-            <>
-              <p className="comment-text">{comment.text}</p>
-              <div className="comment-actions">
-                {user && (
-                  <button
-                    className="reply-button"
-                    onClick={handleReplyClick}
-                    type="button"
-                  >
-                    {isReplying ? 'Cancel Reply' : 'Reply'}
-                  </button>
-                )}
-                {isOwner && (
-                  <>
-                    <button
-                      className="edit-button"
-                      onClick={() => setEditingComment(comment.id)}
-                      type="button"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDeleteComment(planId, comment.id)}
-                      type="button"
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-                {!isOwner && isCourseOwner && (
-                  <>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDeleteComment(planId, comment.id)}
-                      type="button"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      className={comment.hidden ? "unhide-button" : "hide-button"}
-                      onClick={handleToggleVisibility}
-                      type="button"
-                    >
-                      {comment.hidden ? "Unhide" : "Hide"}
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {isReplying && (
-          <div className="reply-form">
-            <CommentInput
-              onSubmit={(text) => handleCommentSubmit(planId, comment.id, text)}
-              onCancel={() => setReplyingTo(null)}
-              placeholder="Write a reply..."
-            />
-            {errors[`${planId}-${comment.id}`] && (
-              <span className="error-message">{errors[`${planId}-${comment.id}`]}</span>
-            )}
-          </div>
-        )}
-
-        {comment.replies?.length > 0 && (
-          <div className="replies-container">
-            {comment.replies.map((reply) => (
-              <CommentSection
-                key={reply.id}
-                planId={planId}
-                comment={reply}
-                level={level + 1}
-              />
-            ))}
-          </div>
-        )}
-
-        {sharedPlans.find(plan => plan.id === planId)?.isShared && (
-          <div className="mt-4 flex items-center space-x-4">
-            <button
-              onClick={() => handleReaction(planId, 'LIKE')}
-              className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
-                userReaction === 'LIKE' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <FaThumbsUp />
-              <span>{planReactions.likes}</span>
-            </button>
-            
-            <button
-              onClick={() => handleReaction(planId, 'DISLIKE')}
-              className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
-                userReaction === 'DISLIKE' 
-                  ? 'bg-red-100 text-red-600' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <FaThumbsDown />
-              <span>{planReactions.dislikes}</span>
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const renderReactionError = () => {
     if (reactionError) {
@@ -682,71 +427,27 @@ const Courses = () => {
                 </div>
 
                 {/* Reaction Section */}
-                <div className="reaction-section">
-                  <button
-                    onClick={() => handleReaction(plan.id, 'LIKE')}
-                    className={`reaction-button like ${userReactions[plan.id] === 'LIKE' ? 'active' : ''}`}
-                  >
-                    <FaThumbsUp />
-                    <span className="reaction-count">{reactions[plan.id]?.likes || 0}</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => handleReaction(plan.id, 'DISLIKE')}
-                    className={`reaction-button dislike ${userReactions[plan.id] === 'DISLIKE' ? 'active' : ''}`}
-                  >
-                    <FaThumbsDown />
-                    <span className="reaction-count">{reactions[plan.id]?.dislikes || 0}</span>
-                  </button>
-                </div>
+                <ReactionSection
+                  contentId={plan.id}
+                  contentType="COURSE"
+                  reactions={reactions}
+                  userReactions={userReactions}
+                  onReaction={handleReaction}
+                  error={reactionError}
+                />
 
                 {/* Comments Section */}
-                <div className="comments-section">
-                  <div className="comments-header">
-                    <h4>Comments</h4>
-                    <button
-                      className="toggle-comments-button"
-                      onClick={() => toggleComments(plan.id)}
-                    >
-                      {expandedComments[plan.id] ? 'Hide Comments' : 'Show Comments'}
-                      <span className="comment-count">
-                        {comments[plan.id]?.length || 0}
-                      </span>
-                    </button>
-                  </div>
-
-                  {expandedComments[plan.id] && (
-                    <>
-                      {comments[plan.id]?.length > 0 ? (
-                        comments[plan.id].map((comment) => (
-                          <CommentSection
-                            key={comment.id}
-                            planId={plan.id}
-                            comment={comment}
-                          />
-                        ))
-                      ) : (
-                        <p>No comments yet. Be the first to comment!</p>
-                      )}
-
-                      {user ? (
-                        <div className="comment-form">
-                          <CommentInput
-                            onSubmit={(text) => handleCommentSubmit(plan.id, null, text)}
-                            placeholder="Add a comment..."
-                          />
-                          {errors[`${plan.id}-new`] && (
-                            <span className="error-message">{errors[`${plan.id}-new`]}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="login-prompt">
-                          Please <a href="/login">log in</a> to add a comment.
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
+                <CommentSection
+                  contentId={plan.id}
+                  comments={comments[plan.id] || []}
+                  onCommentSubmit={handleCommentSubmit}
+                  onCommentUpdate={handleUpdateComment}
+                  onCommentDelete={handleDeleteComment}
+                  onCommentToggleVisibility={handleToggleCommentVisibility}
+                  onReply={handleCommentSubmit}
+                  isContentOwner={user && plan.userEmail === user.email}
+                  errors={errors}
+                />
               </div>
             </div>
           ))}
