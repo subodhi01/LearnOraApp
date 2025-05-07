@@ -169,22 +169,6 @@ const Courses = () => {
         [planId]: updatedComments
       }));
       
-      // Create notification for the course owner
-      const plan = sharedPlans.find(p => p.id === planId);
-      if (plan && plan.userEmail !== user.email) {
-        const message = parentId 
-          ? `${user.firstName} ${user.lastName} replied to a comment on your course '${plan.title}'`
-          : `${user.firstName} ${user.lastName} commented on your course '${plan.title}'`;
-        
-        await createNotification(
-          plan.userEmail,
-          'COMMENT',
-          message,
-          planId,
-          savedComment.id
-        );
-      }
-      
       // Clear any errors and reset reply state
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: '' }));
     } catch (error) {
