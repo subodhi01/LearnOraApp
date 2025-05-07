@@ -59,7 +59,7 @@ public class ReactionService {
                     if (!plan.getUserEmail().equals(userId)) {
                         String message = String.format("%s %s your course '%s'", 
                             userId, 
-                            reactionType.toLowerCase() + "d",
+                            reactionType.equals("LIKE") ? "liked" : "disliked",
                             plan.getTitle());
                         
                         notificationService.createNotification(
@@ -117,7 +117,7 @@ public class ReactionService {
                     if (!plan.getUserEmail().equals(userId)) {
                         String message = String.format("%s removed their %s from your course '%s'", 
                             userId, 
-                            reaction.getReactionType().toLowerCase(),
+                            reaction.getReactionType().equals("LIKE") ? "like" : "dislike",
                             plan.getTitle());
                         
                         notificationService.createNotification(
