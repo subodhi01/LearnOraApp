@@ -100,7 +100,8 @@ public class CommentService {
                         parentComment.get().getUserId(),
                         "COMMENT_REPLY",
                         message,
-                        savedComment.getId()
+                        savedComment.getId(),
+                        comment.getPostId()
                     );
                     logger.info("Reply notification created successfully: id={}", notification.getId());
                 }
@@ -119,7 +120,8 @@ public class CommentService {
                     plan.getUserEmail(),
                     "COURSE_COMMENT",
                     message,
-                    savedComment.getId()
+                    savedComment.getId(),
+                    plan.getId()
                 );
                 logger.info("Course owner notification created successfully: id={}", notification.getId());
             }

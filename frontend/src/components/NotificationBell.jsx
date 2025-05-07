@@ -68,18 +68,26 @@ const NotificationBell = () => {
     };
 
     const handleNotificationClick = async (notification) => {
-        if (!user?.email) return;
         try {
-            if (!notification.read) {
-                await markAsRead(notification.id);
-                setUnreadCount(prev => Math.max(0, prev - 1));
-            }
+            // Mark the notification as read
+            await markAsRead(notification.id);
+            
+            // Update the notification in the state
+            setNotifications(prevNotifications =>
+                prevNotifications.map(n =>
+                    n.id === notification.id ? { ...n, read: true } : n
+                )
+            );
 
             // Handle navigation based on notification type
-            if (notification.type === 'COMMENT_REPLY' && notification.relatedId) {
-                // Navigate to the courses page with the comment ID
-                navigate(`/courses?commentId=${notification.relatedId}`);
+            if (notification.type === 'COURSE_COMMENT') {
+                // Navigate to the course with the specific comment
+                navigate(`/courses?courseId=${notification.courseId}&commentId=${notification.relatedId}`);
+            } else if (notification.type === 'COMMENT_REPLY') {
+                // Navigate to the comment reply
+                navigate(`/courses?courseId=${notification.courseId}&commentId=${notification.relatedId}`);
             }
+            // Add other notification type handlers as needed
         } catch (error) {
             console.error('Error handling notification click:', error);
         }

@@ -62,6 +62,7 @@ const Courses = () => {
   const [errors, setErrors] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
   const [targetCommentId, setTargetCommentId] = useState(null);
+  const [targetCourseId, setTargetCourseId] = useState(null);
   const { user } = useAuth();
   const commentRefs = useRef({});
 
@@ -90,55 +91,55 @@ const Courses = () => {
     };
 
     loadData();
-  }, []); // Remove targetCommentId dependency
-
-  // Separate effect for handling target comment navigation
-  useEffect(() => {
-    const navigateToComment = async () => {
-      if (!targetCommentId || !sharedPlans.length) return;
-
-      // Wait for comments to be loaded
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Find the plan containing the target comment
-      for (const plan of sharedPlans) {
-        const planComments = comments[plan.id] || [];
-        const hasComment = planComments.some(comment => 
-          comment.id === targetCommentId || 
-          (comment.replies && comment.replies.some(reply => reply.id === targetCommentId))
-        );
-
-        if (hasComment) {
-          // Expand the comments section
-          setExpandedComments(prev => ({ ...prev, [plan.id]: true }));
-
-          // Wait for the DOM to update
-          setTimeout(() => {
-            const commentElement = document.querySelector(`[data-comment-id="${targetCommentId}"]`);
-            if (commentElement) {
-              commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              commentElement.classList.add('highlight-comment');
-              setTimeout(() => {
-                commentElement.classList.remove('highlight-comment');
-              }, 2000);
-            }
-          }, 100);
-          break;
-        }
-      }
-    };
-
-    navigateToComment();
-  }, [targetCommentId, sharedPlans, comments]);
+  }, []);
 
   // Handle URL parameters for comment navigation
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const commentId = params.get('commentId');
-    if (commentId) {
+    const courseId = params.get('courseId');
+    
+    if (commentId && courseId) {
       setTargetCommentId(commentId);
+      setTargetCourseId(courseId);
     }
   }, [location.search]);
+
+  // Separate effect for handling target comment navigation
+  useEffect(() => {
+    const navigateToComment = async () => {
+      if (!targetCommentId || !targetCourseId || !sharedPlans.length) return;
+
+      // Wait for comments to be loaded
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Find the target plan
+      const targetPlan = sharedPlans.find(plan => plan.id === targetCourseId);
+      if (!targetPlan) return;
+
+      // Expand the comments section
+      setExpandedComments(prev => ({ ...prev, [targetPlan.id]: true }));
+
+      // Wait for the DOM to update
+      setTimeout(() => {
+        const commentElement = document.querySelector(`[data-comment-id="${targetCommentId}"]`);
+        if (commentElement) {
+          // Scroll the comment into view
+          commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Add highlight effect
+          commentElement.classList.add('highlight-comment');
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            commentElement.classList.remove('highlight-comment');
+          }, 2000);
+        }
+      }, 100);
+    };
+
+    navigateToComment();
+  }, [targetCommentId, targetCourseId, sharedPlans, comments]);
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) {

@@ -12,6 +12,7 @@ public class NotificationModel {
     private String type;
     private String message;
     private String relatedId; // ID of the related comment or post
+    private String courseId;  // ID of the course for navigation
     private boolean read;
     private LocalDateTime createdAt;
 
@@ -20,12 +21,13 @@ public class NotificationModel {
         this.read = false;
     }
 
-    public NotificationModel(String userId, String type, String message, String relatedId) {
+    public NotificationModel(String userId, String type, String message, String relatedId, String courseId) {
         this();
         this.userId = userId;
         this.type = type;
         this.message = message;
         this.relatedId = relatedId;
+        this.courseId = courseId;
     }
 
     // Getters and Setters
@@ -83,5 +85,13 @@ public class NotificationModel {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(String courseId) {
+        this.courseId = courseId;
     }
 } 
