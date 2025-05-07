@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getUnreadCount, getUserNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
+import { getUnreadCount, getUserNotifications, markAsRead, markAllAsRead } from '../../services/notificationService';
 import './NotificationBell.css';
 
 const NotificationBell = () => {

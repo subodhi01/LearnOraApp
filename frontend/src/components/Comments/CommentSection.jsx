@@ -63,7 +63,8 @@ const CommentItem = React.forwardRef(({
   editingComment,
   errors,
   handleSubmit,
-  handleCancel
+  handleCancel,
+  contentId
 }, ref) => {
   const isReplying = replyingTo === comment.id;
   const isEditing = editingComment === comment.id;
@@ -74,6 +75,14 @@ const CommentItem = React.forwardRef(({
       onDelete(comment.id);
     } else {
       console.error('Cannot delete comment: Invalid comment ID');
+    }
+  };
+
+  const handleToggleVisibility = () => {
+    if (comment && comment.id) {
+      onToggleVisibility(contentId, comment.id);
+    } else {
+      console.error('Cannot toggle visibility: Invalid comment ID');
     }
   };
 
@@ -137,7 +146,7 @@ const CommentItem = React.forwardRef(({
                   </button>
                   <button
                     className={comment.hidden ? "unhide-button" : "hide-button"}
-                    onClick={() => onToggleVisibility(comment.id)}
+                    onClick={handleToggleVisibility}
                   >
                     {comment.hidden ? "Unhide" : "Hide"}
                   </button>
@@ -181,6 +190,7 @@ const CommentItem = React.forwardRef(({
               errors={errors}
               handleSubmit={handleSubmit}
               handleCancel={handleCancel}
+              contentId={contentId}
             />
           ))}
         </div>
@@ -294,6 +304,7 @@ const CommentSection = ({
         errors={errors}
         handleSubmit={handleSubmit}
         handleCancel={handleCancel}
+        contentId={contentId}
         ref={isHighlighted ? highlightedCommentRef : null}
       />
     );

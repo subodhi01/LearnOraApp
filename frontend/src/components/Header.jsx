@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import NotificationBell from './NotificationBell';
+import NotificationBell from './Notifications/NotificationBell';
 import './Header.css';
 
 const Header = () => {
