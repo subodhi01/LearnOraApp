@@ -3,7 +3,9 @@ import './Courses.css';
 import learningPlanService from '../../services/learningPlanService';
 import { createComment, getCommentsByPostId, updateComment, deleteComment, toggleCommentVisibility } from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { reactionService } from '../../services/reactionService';
+import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 
 const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
   const [inputValue, setInputValue] = useState(initialValue);
@@ -65,6 +67,9 @@ const Courses = () => {
   const [targetCourseId, setTargetCourseId] = useState(null);
   const { user } = useAuth();
   const commentRefs = useRef({});
+  const [reactions, setReactions] = useState({});
+  const [userReactions, setUserReactions] = useState({});
+  const [reactionError, setReactionError] = useState(null);
 
   // Load plans and comments
   useEffect(() => {
@@ -262,11 +267,134 @@ const Courses = () => {
     }));
   };
 
+  const loadReactions = async (plan) => {
+    try {
+      setReactionError(null);
+      const counts = await reactionService.getReactionCounts('COURSE', plan.id);
+      const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
+      
+      setReactions(prev => ({
+        ...prev,
+        [plan.id]: counts
+      }));
+      
+      setUserReactions(prev => ({
+        ...prev,
+        [plan.id]: userReaction
+      }));
+    } catch (error) {
+      console.error('Error loading reactions:', error);
+      setReactionError('Failed to load reactions');
+      // Set default values on error
+      setReactions(prev => ({
+        ...prev,
+        [plan.id]: { likes: 0, dislikes: 0 }
+      }));
+      setUserReactions(prev => ({
+        ...prev,
+        [plan.id]: null
+      }));
+    }
+  };
+
+  const handleReaction = async (planId, reactionType) => {
+    try {
+      setReactionError(null);
+      const currentReaction = userReactions[planId];
+      
+      if (currentReaction === reactionType) {
+        // Remove reaction if clicking the same button
+        await reactionService.removeReaction('COURSE', planId, user.email);
+        setUserReactions(prev => ({
+          ...prev,
+          [planId]: null
+        }));
+        setReactions(prev => ({
+          ...prev,
+          [planId]: {
+            likes: prev[planId].likes - (reactionType === 'LIKE' ? 1 : 0),
+            dislikes: prev[planId].dislikes - (reactionType === 'DISLIKE' ? 1 : 0)
+          }
+        }));
+      } else {
+        // Add new reaction
+        await reactionService.addReaction('COURSE', planId, user.email, reactionType);
+        setUserReactions(prev => ({
+          ...prev,
+          [planId]: reactionType
+        }));
+        setReactions(prev => ({
+          ...prev,
+          [planId]: {
+            likes: prev[planId].likes + (reactionType === 'LIKE' ? 1 : 0) - (currentReaction === 'LIKE' ? 1 : 0),
+            dislikes: prev[planId].dislikes + (reactionType === 'DISLIKE' ? 1 : 0) - (currentReaction === 'DISLIKE' ? 1 : 0)
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      setReactionError('Failed to update reaction');
+    }
+  };
+
+  // Add this useEffect to test the connection
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        await reactionService.testConnection();
+        console.log('Reaction service connection successful');
+      } catch (error) {
+        console.error('Reaction service connection failed:', error);
+        setReactionError('Unable to connect to the reaction service. Please make sure the backend is running.');
+      }
+    };
+
+    testConnection();
+  }, []);
+
+  // Update the loadReactions function
+  useEffect(() => {
+    const loadReactions = async () => {
+      if (sharedPlans.length > 0) {
+        const reactionsData = {};
+        const userReactionsData = {};
+        
+        for (const plan of sharedPlans) {
+          try {
+            console.log('Loading reactions for plan:', plan.id);
+            const counts = await reactionService.getReactionCounts('COURSE', plan.id);
+            console.log('Reaction counts:', counts);
+            reactionsData[plan.id] = counts;
+            
+            if (user) {
+              const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
+              console.log('User reaction:', userReaction);
+              userReactionsData[plan.id] = userReaction;
+            }
+          } catch (error) {
+            console.error('Error loading reactions for plan:', plan.id, error);
+            setReactionError('Unable to load reactions. Please make sure the backend server is running.');
+            // Set default values for this plan
+            reactionsData[plan.id] = { likes: 0, dislikes: 0 };
+            userReactionsData[plan.id] = null;
+          }
+        }
+        
+        setReactions(reactionsData);
+        setUserReactions(userReactionsData);
+      }
+    };
+
+    loadReactions();
+  }, [sharedPlans, user]);
+
   const CommentSection = ({ planId, comment, level = 0 }) => {
     const isReplying = replyingTo === comment.id;
     const isEditing = editingComment === comment.id;
     const isOwner = user && comment.userId === user.email;
     const isCourseOwner = user && sharedPlans.find(plan => plan.id === planId)?.userEmail === user.email;
+    const planReactions = reactions[planId] || { likes: 0, dislikes: 0 };
+    const userReaction = userReactions[planId];
 
     const handleReplyClick = () => {
       setReplyingTo(isReplying ? null : comment.id);
@@ -410,8 +538,47 @@ const Courses = () => {
             ))}
           </div>
         )}
+
+        {sharedPlans.find(plan => plan.id === planId)?.isShared && (
+          <div className="mt-4 flex items-center space-x-4">
+            <button
+              onClick={() => handleReaction(planId, 'LIKE')}
+              className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
+                userReaction === 'LIKE' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <FaThumbsUp />
+              <span>{planReactions.likes}</span>
+            </button>
+            
+            <button
+              onClick={() => handleReaction(planId, 'DISLIKE')}
+              className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
+                userReaction === 'DISLIKE' 
+                  ? 'bg-red-100 text-red-600' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <FaThumbsDown />
+              <span>{planReactions.dislikes}</span>
+            </button>
+          </div>
+        )}
       </div>
     );
+  };
+
+  const renderReactionError = () => {
+    if (reactionError) {
+      return (
+        <div className="reaction-error">
+          <p>{reactionError}</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -420,6 +587,7 @@ const Courses = () => {
 
   return (
     <div className="courses-container">
+      {renderReactionError()}
       <h2>Available Courses</h2>
       {sharedPlans.length === 0 ? (
         <p className="no-courses">No shared courses available yet.</p>
@@ -499,6 +667,42 @@ const Courses = () => {
                     </>
                   )}
                 </div>
+
+                <div className="flex justify-between items-center mt-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">
+                      {comments[plan.id]?.length || 0} comments
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => handleReaction(plan.id, 'LIKE')}
+                      className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
+                        userReactions[plan.id] === 'LIKE'
+                          ? 'bg-blue-100 text-blue-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FaThumbsUp />
+                      <span>{reactions[plan.id]?.likes || 0}</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleReaction(plan.id, 'DISLIKE')}
+                      className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
+                        userReactions[plan.id] === 'DISLIKE'
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FaThumbsDown />
+                      <span>{reactions[plan.id]?.dislikes || 0}</span>
+                    </button>
+                  </div>
+                </div>
+                {reactionError && (
+                  <p className="mt-2 text-sm text-red-600">{reactionError}</p>
+                )}
               </div>
             </div>
           ))}
