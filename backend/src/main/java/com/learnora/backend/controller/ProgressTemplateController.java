@@ -98,4 +98,27 @@ public class ProgressTemplateController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping
+    public ResponseEntity<List<ProgressTemplate>> getAllTemplates() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        logger.debug("Received request to get all templates. Auth: {}", auth);
+        
+        if (auth == null || !auth.isAuthenticated()) {
+            logger.error("Authentication failed: {}", auth);
+            return ResponseEntity.status(403).build();
+        }
+
+        String userEmail = auth.getName();
+        logger.debug("Authenticated user email: {}", userEmail);
+        
+        try {
+            List<ProgressTemplate> templates = progressTemplateService.getUserTemplates(userEmail);
+            logger.debug("Successfully retrieved templates: {}", templates);
+            return ResponseEntity.ok(templates);
+        } catch (Exception e) {
+            logger.error("Error retrieving templates: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).build();
+        }
+    }
 } 

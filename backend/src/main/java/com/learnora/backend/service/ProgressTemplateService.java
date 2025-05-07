@@ -20,6 +20,9 @@ public class ProgressTemplateService {
 
     public ProgressTemplate createTemplate(ProgressTemplate template) {
         logger.debug("Creating new progress template: {}", template);
+        if (template.getUserId() == null || template.getUserId().isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
         template.setCreatedAt(new Date());
         template.setUpdatedAt(new Date());
         template.setActive(true);
@@ -30,6 +33,7 @@ public class ProgressTemplateService {
     }
 
     public ProgressTemplate updateTemplate(String id, ProgressTemplate template) {
+        logger.debug("Updating template with id: {}", id);
         Optional<ProgressTemplate> existingTemplate = progressTemplateRepository.findById(id);
         if (existingTemplate.isPresent()) {
             ProgressTemplate updatedTemplate = existingTemplate.get();
@@ -39,23 +43,46 @@ public class ProgressTemplateService {
             calculatePercentages(updatedTemplate);
             return progressTemplateRepository.save(updatedTemplate);
         }
-        throw new RuntimeException("Progress template not found");
+        throw new RuntimeException("Progress template not found with id: " + id);
     }
 
     public void deleteTemplate(String id) {
+        logger.debug("Deleting template with id: {}", id);
+        if (!progressTemplateRepository.existsById(id)) {
+            throw new RuntimeException("Progress template not found with id: " + id);
+        }
         progressTemplateRepository.deleteById(id);
     }
 
     public List<ProgressTemplate> getUserTemplates(String userId) {
-        return progressTemplateRepository.findByUserIdAndIsActiveTrue(userId);
+        logger.debug("Getting templates for user: {}", userId);
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        List<ProgressTemplate> templates = progressTemplateRepository.findByUserIdAndIsActiveTrue(userId);
+        logger.debug("Found {} templates for user {}", templates.size(), userId);
+        return templates;
     }
 
     public Optional<ProgressTemplate> getTemplateByUserAndCourse(String userId, String courseId) {
+        logger.debug("Getting template for user {} and course {}", userId, courseId);
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        if (courseId == null || courseId.isEmpty()) {
+            throw new IllegalArgumentException("Course ID is required");
+        }
         return progressTemplateRepository.findByUserIdAndCourseId(userId, courseId);
     }
 
     private void calculatePercentages(ProgressTemplate template) {
+        logger.debug("Calculating percentages for template: {}", template);
         int totalItems = template.getTopics().size() + template.getCustomItems().size();
+        if (totalItems == 0) {
+            logger.warn("No items found in template for percentage calculation");
+            return;
+        }
+        
         double basePercentage = 100.0 / totalItems;
 
         // Set percentages for topics
@@ -77,5 +104,6 @@ public class ProgressTemplateService {
             totalProgress += (item.getCurrentProgress() * item.getPercentage() / 100);
         }
         template.setTotalProgress(totalProgress);
+        logger.debug("Calculated total progress: {}", totalProgress);
     }
 } 
