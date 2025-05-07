@@ -2,7 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './CommentSection.css';
 
-const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
+// Constants for validation
+const MAX_COMMENT_LENGTH = 1000;
+const MIN_COMMENT_LENGTH = 1;
+const COMMENT_COOLDOWN = 5000; // 5 seconds between comments
+
+const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder, error, isSubmitting }) => {
   const [inputValue, setInputValue] = useState(initialValue);
   const textareaRef = useRef(null);
 
@@ -24,6 +29,13 @@ const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) =>
     setInputValue('');
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
     <div className="comment-input-container">
       <textarea
@@ -31,18 +43,33 @@ const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) =>
         placeholder={placeholder}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        className="comment-input"
+        onKeyPress={handleKeyPress}
+        className={`comment-input ${error ? 'error' : ''}`}
         rows={3}
+        maxLength={MAX_COMMENT_LENGTH}
+        disabled={isSubmitting}
       />
+      {error && <div className="error-message">{error}</div>}
       <div className="comment-actions">
-        <button onClick={handleSubmit} className="submit-comment-button">
-          {initialValue ? 'Save' : 'Post Comment'}
+        <button 
+          onClick={handleSubmit} 
+          className="submit-comment-button"
+          disabled={isSubmitting || !inputValue.trim()}
+        >
+          {isSubmitting ? 'Posting...' : (initialValue ? 'Save' : 'Post Comment')}
         </button>
         {onCancel && (
-          <button onClick={handleCancel} className="cancel-button">
+          <button 
+            onClick={handleCancel} 
+            className="cancel-button"
+            disabled={isSubmitting}
+          >
             Cancel
           </button>
         )}
+      </div>
+      <div className="comment-length-indicator">
+        {inputValue.length}/{MAX_COMMENT_LENGTH} characters
       </div>
     </div>
   );
@@ -217,26 +244,24 @@ const CommentSection = ({
   const [expandedComments, setExpandedComments] = useState({});
   const [showCommentInput, setShowCommentInput] = useState(false);
   const highlightedCommentRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastCommentTime, setLastCommentTime] = useState(0);
+  const [inputError, setInputError] = useState('');
 
   // Effect to handle comment highlighting and scrolling
   useEffect(() => {
     if (highlightCommentId) {
-      // Always expand comments when there's a highlightCommentId
       setExpandedComments(prev => ({ ...prev, [contentId]: true }));
       
-      // Wait for the next render cycle to ensure the comment is rendered
       setTimeout(() => {
         if (highlightedCommentRef.current) {
-          // Scroll to the highlighted comment
           highlightedCommentRef.current.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center' 
           });
           
-          // Add highlight animation
           highlightedCommentRef.current.classList.add('highlight-comment');
           
-          // Remove highlight after animation
           setTimeout(() => {
             highlightedCommentRef.current?.classList.remove('highlight-comment');
           }, 2000);
@@ -245,34 +270,82 @@ const CommentSection = ({
     }
   }, [highlightCommentId, contentId]);
 
+  const validateComment = (text) => {
+    if (!text.trim()) return 'Comment cannot be empty';
+    if (text.trim().length < MIN_COMMENT_LENGTH) return `Comment must be at least ${MIN_COMMENT_LENGTH} characters long`;
+    if (text.length > MAX_COMMENT_LENGTH) return `Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`;
+    return '';
+  };
+
   const handleReply = (commentId) => {
     setReplyingTo(commentId);
     setEditingComment(null);
+    setInputError('');
   };
 
   const handleEdit = (commentId) => {
     setEditingComment(commentId);
     setReplyingTo(null);
+    setInputError('');
   };
 
   const handleCancel = () => {
     setReplyingTo(null);
     setEditingComment(null);
+    setInputError('');
   };
 
-  const handleSubmit = (text) => {
-    if (replyingTo) {
-      onReply(contentId, replyingTo, text);
-    } else {
-      onCommentSubmit(contentId, null, text);
+  const handleSubmit = async (text) => {
+    const error = validateComment(text);
+    if (error) {
+      setInputError(error);
+      return;
     }
-    handleCancel();
-    setShowCommentInput(false);
+
+    // Check for rate limiting
+    const now = Date.now();
+    if (now - lastCommentTime < COMMENT_COOLDOWN) {
+      setInputError('Please wait a moment before posting another comment');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setInputError('');
+
+    try {
+      if (replyingTo) {
+        await onReply(contentId, replyingTo, text);
+      } else {
+        await onCommentSubmit(contentId, null, text);
+      }
+      setLastCommentTime(now);
+      handleCancel();
+      setShowCommentInput(false);
+    } catch (error) {
+      setInputError(error.message || 'Failed to post comment');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUpdate = (commentId, newText) => {
-    onCommentUpdate(contentId, commentId, newText);
-    handleCancel();
+  const handleUpdate = async (commentId, newText) => {
+    const error = validateComment(newText);
+    if (error) {
+      setInputError(error);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setInputError('');
+
+    try {
+      await onCommentUpdate(contentId, commentId, newText);
+      handleCancel();
+    } catch (error) {
+      setInputError(error.message || 'Failed to update comment');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isCommentOwner = (comment) => {
@@ -338,6 +411,8 @@ const CommentSection = ({
                   onSubmit={handleSubmit}
                   onCancel={() => setShowCommentInput(false)}
                   placeholder="Write a comment..."
+                  error={inputError}
+                  isSubmitting={isSubmitting}
                 />
               )}
             </>
