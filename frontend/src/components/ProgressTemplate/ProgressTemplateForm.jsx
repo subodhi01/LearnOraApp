@@ -310,40 +310,54 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                 <div className="error-message">{customItemError}</div>
               )}
 
-              {customItems.map((item, index) => (
-                <div key={index} className="progress-template-custom-item">
-                  <div className="custom-item-info">
-                    <div className="custom-item-header">
-                      <span>{item.name}</span>
-                      <span className="custom-item-topic">Topic: {item.topicId}</span>
+              {topics.map(topic => {
+                const topicItems = customItems.filter(item => item.topicId === topic.title);
+                if (topicItems.length === 0) return null;
+
+                return (
+                  <div key={topic.title} className="topic-custom-items">
+                    <div className="topic-custom-header">
+                      <h4>{topic.title}</h4>
+                      <span className="item-count">{topicItems.length} target{topicItems.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <span className="custom-item-date">
-                      Finish by: {new Date(item.finishDate).toLocaleDateString()}
-                    </span>
+                    <div className="topic-custom-list">
+                      {topicItems.map((item, index) => (
+                        <div key={index} className="progress-template-custom-item">
+                          <div className="custom-item-info">
+                            <div className="custom-item-header">
+                              <span>{item.name}</span>
+                            </div>
+                            <span className="custom-item-date">
+                              Finish by: {new Date(item.finishDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="custom-item-actions">
+                            {template && (
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={item.currentProgress || 0}
+                                onChange={(e) => {
+                                  const newItems = customItems.map((i, idx) => 
+                                    idx === index 
+                                      ? { ...i, currentProgress: parseInt(e.target.value) || 0 }
+                                      : i
+                                  );
+                                  setCustomItems(newItems);
+                                }}
+                              />
+                            )}
+                            <button type="button" onClick={() => removeCustomItem(index)}>
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="custom-item-actions">
-                    {template && (
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={item.currentProgress || 0}
-                        onChange={(e) => {
-                          const newItems = customItems.map((i, idx) => 
-                            idx === index 
-                              ? { ...i, currentProgress: parseInt(e.target.value) || 0 }
-                              : i
-                          );
-                          setCustomItems(newItems);
-                        }}
-                      />
-                    )}
-                    <button type="button" onClick={() => removeCustomItem(index)}>
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </>

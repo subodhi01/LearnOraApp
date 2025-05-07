@@ -305,4 +305,50 @@
   background-color: #f0f0f0;
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+.topic-custom-items {
+  margin-top: 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.topic-custom-header {
+  background-color: #f8f9fa;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topic-custom-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.item-count {
+  background-color: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.topic-custom-list {
+  padding: 15px;
+  background-color: white;
+}
+
+.topic-custom-list .progress-template-custom-item {
+  margin-bottom: 10px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.topic-custom-list .progress-template-custom-item:last-child {
+  margin-bottom: 0;
 } 
