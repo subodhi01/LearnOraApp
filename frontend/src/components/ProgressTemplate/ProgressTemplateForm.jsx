@@ -19,6 +19,9 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
   const { user } = useAuth();
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [calculationMethod, setCalculationMethod] = useState('byTopics'); // 'byTopics' or 'byTargets'
+  const [topicPercentages, setTopicPercentages] = useState({});
+  const [targetPercentages, setTargetPercentages] = useState({});
 
   useEffect(() => {
     if (!user) {
@@ -136,6 +139,59 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     setCustomItems(customItems.filter((_, i) => i !== index));
   };
 
+  const calculatePercentages = () => {
+    if (calculationMethod === 'byTopics') {
+      // Calculate by topics first
+      const topicCount = topics.length;
+      const baseTopicPercentage = 100 / topicCount;
+      
+      // Set topic percentages
+      const newTopicPercentages = {};
+      topics.forEach(topic => {
+        newTopicPercentages[topic.title] = baseTopicPercentage;
+      });
+      setTopicPercentages(newTopicPercentages);
+
+      // Calculate target percentages within each topic
+      const newTargetPercentages = {};
+      topics.forEach(topic => {
+        const topicTargets = customItems.filter(item => item.topicId === topic.title);
+        if (topicTargets.length > 0) {
+          const targetPercentage = baseTopicPercentage / topicTargets.length;
+          topicTargets.forEach(target => {
+            newTargetPercentages[target.name] = targetPercentage;
+          });
+        }
+      });
+      setTargetPercentages(newTargetPercentages);
+    } else {
+      // Calculate by total targets
+      const totalTargets = customItems.length;
+      const baseTargetPercentage = 100 / totalTargets;
+      
+      // Set target percentages
+      const newTargetPercentages = {};
+      customItems.forEach(target => {
+        newTargetPercentages[target.name] = baseTargetPercentage;
+      });
+      setTargetPercentages(newTargetPercentages);
+
+      // Calculate topic percentages based on their targets
+      const newTopicPercentages = {};
+      topics.forEach(topic => {
+        const topicTargets = customItems.filter(item => item.topicId === topic.title);
+        newTopicPercentages[topic.title] = topicTargets.reduce((sum, target) => 
+          sum + (newTargetPercentages[target.name] || 0), 0
+        );
+      });
+      setTopicPercentages(newTopicPercentages);
+    }
+  };
+
+  useEffect(() => {
+    calculatePercentages();
+  }, [topics, customItems, calculationMethod]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCourse) return;
@@ -232,12 +288,36 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       {selectedCourse && (
         <>
           <div className="form-group">
+            <label>Percentage Calculation Method</label>
+            <div className="calculation-method-selector">
+              <select 
+                value={calculationMethod} 
+                onChange={(e) => setCalculationMethod(e.target.value)}
+                className="calculation-select"
+              >
+                <option value="byTopics">Calculate by Topics First</option>
+                <option value="byTargets">Calculate by Total Targets</option>
+              </select>
+              <div className="calculation-info">
+                {calculationMethod === 'byTopics' ? (
+                  <p>Each topic gets equal percentage, divided among its targets</p>
+                ) : (
+                  <p>All targets get equal percentage, topics calculated based on their targets</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group">
             <label>Course Topics</label>
             <div className="progress-template-topics">
               {topics.map((topic, index) => (
                 <div key={`${topic.title}-${index}`} className="progress-template-topic">
                   <div className="topic-info">
                     <span>{topic.title}</span>
+                    <span className="topic-percentage">
+                      {topicPercentages[topic.title]?.toFixed(1)}%
+                    </span>
                     {topics.filter(t => t.title.toLowerCase() === topic.title.toLowerCase()).length > 1 && (
                       <span className="duplicate-warning">(Duplicate)</span>
                     )}
@@ -318,7 +398,10 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                   <div key={topic.title} className="topic-custom-items">
                     <div className="topic-custom-header">
                       <h4>{topic.title}</h4>
-                      <span className="item-count">{topicItems.length} target{topicItems.length !== 1 ? 's' : ''}</span>
+                      <div className="topic-stats">
+                        <span className="item-count">{topicItems.length} target{topicItems.length !== 1 ? 's' : ''}</span>
+                        <span className="topic-percentage">{topicPercentages[topic.title]?.toFixed(1)}%</span>
+                      </div>
                     </div>
                     <div className="topic-custom-list">
                       {topicItems.map((item, index) => (
@@ -326,6 +409,9 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                           <div className="custom-item-info">
                             <div className="custom-item-header">
                               <span>{item.name}</span>
+                              <span className="target-percentage">
+                                {targetPercentages[item.name]?.toFixed(1)}%
+                              </span>
                             </div>
                             <span className="custom-item-date">
                               Finish by: {new Date(item.finishDate).toLocaleDateString()}

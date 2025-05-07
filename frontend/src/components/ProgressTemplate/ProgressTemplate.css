@@ -351,4 +351,58 @@
 
 .topic-custom-list .progress-template-custom-item:last-child {
   margin-bottom: 0;
+}
+
+.calculation-method-selector {
+  margin-bottom: 15px;
+}
+
+.calculation-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.calculation-info {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #666;
+}
+
+.calculation-info p {
+  margin: 0;
+}
+
+.topic-percentage {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.target-percentage {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.topic-stats {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.topic-stats .topic-percentage {
+  background-color: #e3f2fd;
+  color: #1976d2;
 } 
