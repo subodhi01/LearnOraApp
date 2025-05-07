@@ -423,4 +423,70 @@
 
 .retry-btn:hover {
   background-color: #b71c1c;
+}
+
+/* Expanded Plan View */
+.expanded-plan {
+  padding: 20px;
+}
+
+.expanded-content {
+  gap: 20px;
+}
+
+.expanded-main {
+  gap: 15px;
+}
+
+.expanded-description,
+.expanded-topics,
+.expanded-progress,
+.expanded-timeline {
+  padding: 16px;
+}
+
+.expanded-topics {
+  /* Make topics list scrollable if too many topics */
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.topic-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.topic-item {
+  padding: 12px;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .expanded-plan {
+    padding: 10px;
+  }
+  .expanded-content {
+    gap: 10px;
+  }
+  .expanded-description,
+  .expanded-topics,
+  .expanded-progress,
+  .expanded-timeline {
+    padding: 10px;
+  }
+  .topic-list {
+    max-height: 200px;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 } 
