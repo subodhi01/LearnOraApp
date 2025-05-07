@@ -20,10 +20,11 @@ const ProgressTemplate = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const data = await progressTemplateService.getUserTemplates(user.id);
+      const data = await progressTemplateService.getTemplates();
       setTemplates(data);
       setError('');
     } catch (err) {
+      console.error('Error fetching templates:', err);
       setError('Failed to fetch progress templates');
     } finally {
       setLoading(false);

@@ -1,11 +1,11 @@
-package com.learnora.model;
+package com.learnora.backend.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.util.Date;
 
-@Document(collection = "progress")
+@Document(collection = "progress_templates")
 public class ProgressTemplate {
     @Id
     private String id;

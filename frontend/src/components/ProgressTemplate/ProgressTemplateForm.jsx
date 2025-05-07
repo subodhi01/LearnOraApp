@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import learningPlanService from '../../services/learningPlanService';
+import progressTemplateService from '../../services/progressTemplateService';
+import { useAuth } from '../../context/AuthContext';
 import './ProgressTemplate.css';
 
 const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
@@ -9,17 +11,29 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [topics, setTopics] = useState([]);
   const [customItems, setCustomItems] = useState(template?.customItems || []);
   const [newCustomItem, setNewCustomItem] = useState('');
+  const [newCustomItemDate, setNewCustomItemDate] = useState('');
+  const [customItemError, setCustomItemError] = useState('');
   const [courseStatus, setCourseStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
+  const { user } = useAuth();
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [calculationMethod, setCalculationMethod] = useState('byTopics'); // 'byTopics' or 'byTargets'
+  const [topicPercentages, setTopicPercentages] = useState({});
+  const [targetPercentages, setTargetPercentages] = useState({});
 
   useEffect(() => {
+    console.log('Current user data:', user); // Debug log
+    if (!user) {
+      setError('Please log in to access this feature');
+      return;
+    }
     fetchCourses();
     if (template?.learningPlanId) {
       handleCourseSelect(template.learningPlanId);
     }
-  }, []);
+  }, [user]);
 
   const fetchCourses = async () => {
     try {
@@ -30,7 +44,11 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       setError('');
     } catch (err) {
       console.error('Error fetching courses:', err);
-      setError('Failed to fetch courses');
+      if (err.status === 401) {
+        setError('Please log in to view courses');
+      } else {
+        setError('Failed to fetch courses');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,47 +58,181 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     console.log('Selected course ID:', courseId);
     setSelectedCourse(courseId);
     try {
-      const response = await axios.get(`/api/learning-plan/${courseId}`);
+      const response = await axios.get(`http://localhost:8000/api/learning-plan/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
       console.log('Course details response:', response.data);
-      setTopics(response.data.topics || []);
-      setCourseStatus(response.data.status);
-      setSelectedCourseDetails(response.data);
+      if (response.data && response.data.topics) {
+        setTopics(response.data.topics);
+        setCourseStatus(response.data.status);
+        setSelectedCourseDetails(response.data);
+      } else {
+        console.error('No topics found in response:', response.data);
+        setError('No topics found for this course');
+      }
     } catch (err) {
       console.error('Error fetching course details:', err);
-      setError('Failed to fetch course details');
+      if (err.response?.status === 401) {
+        setError('Please log in to view course details');
+      } else {
+        setError('Failed to fetch course details');
+      }
+      setTopics([]);
+      setCourseStatus(null);
+      setSelectedCourseDetails(null);
     }
   };
 
+  const validateDate = (date) => {
+    if (!selectedCourseDetails) return false;
+    const targetDate = new Date(date);
+    const startDate = new Date(selectedCourseDetails.startDate);
+    const endDate = new Date(selectedCourseDetails.endDate);
+    return targetDate >= startDate && targetDate <= endDate;
+  };
+
+  const isDuplicateTopic = (topicTitle) => {
+    return topics.some(topic => topic.title.toLowerCase() === topicTitle.toLowerCase());
+  };
+
+  const isDuplicateCustomItem = (itemName, topicId) => {
+    return customItems.some(item => 
+      item.name.toLowerCase() === itemName.toLowerCase() && 
+      item.topicId === topicId
+    );
+  };
+
   const addCustomItem = () => {
-    if (newCustomItem.trim()) {
-      setCustomItems([...customItems, { name: newCustomItem, progress: 0 }]);
-      setNewCustomItem('');
+    if (!selectedTopic) {
+      setCustomItemError('Please select a topic first');
+      return;
     }
+    if (!newCustomItem.trim()) {
+      setCustomItemError('Please enter a target name');
+      return;
+    }
+    if (!newCustomItemDate) {
+      setCustomItemError('Please select a finish date');
+      return;
+    }
+    if (!validateDate(newCustomItemDate)) {
+      setCustomItemError('Finish date must be between course start and end dates');
+      return;
+    }
+    if (isDuplicateCustomItem(newCustomItem.trim(), selectedTopic.title)) {
+      setCustomItemError('This learning target already exists for this topic');
+      return;
+    }
+    setCustomItems([...customItems, { 
+      name: newCustomItem, 
+      progress: 0,
+      finishDate: newCustomItemDate,
+      topicId: selectedTopic.title
+    }]);
+    setNewCustomItem('');
+    setNewCustomItemDate('');
+    setCustomItemError('');
   };
 
   const removeCustomItem = (index) => {
     setCustomItems(customItems.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const calculatePercentages = () => {
+    if (calculationMethod === 'byTopics') {
+      // Calculate by topics first
+      const topicCount = topics.length;
+      const baseTopicPercentage = 100 / topicCount;
+      
+      // Set topic percentages
+      const newTopicPercentages = {};
+      topics.forEach(topic => {
+        newTopicPercentages[topic.title] = baseTopicPercentage;
+      });
+      setTopicPercentages(newTopicPercentages);
+
+      // Calculate target percentages within each topic
+      const newTargetPercentages = {};
+      topics.forEach(topic => {
+        const topicTargets = customItems.filter(item => item.topicId === topic.title);
+        if (topicTargets.length > 0) {
+          const targetPercentage = baseTopicPercentage / topicTargets.length;
+          topicTargets.forEach(target => {
+            newTargetPercentages[target.name] = targetPercentage;
+          });
+        }
+      });
+      setTargetPercentages(newTargetPercentages);
+    } else {
+      // Calculate by total targets
+      const totalTargets = customItems.length;
+      const baseTargetPercentage = 100 / totalTargets;
+      
+      // Set target percentages
+      const newTargetPercentages = {};
+      customItems.forEach(target => {
+        newTargetPercentages[target.name] = baseTargetPercentage;
+      });
+      setTargetPercentages(newTargetPercentages);
+
+      // Calculate topic percentages based on their targets
+      const newTopicPercentages = {};
+      topics.forEach(topic => {
+        const topicTargets = customItems.filter(item => item.topicId === topic.title);
+        newTopicPercentages[topic.title] = topicTargets.reduce((sum, target) => 
+          sum + (newTargetPercentages[target.name] || 0), 0
+        );
+      });
+      setTopicPercentages(newTopicPercentages);
+    }
+  };
+
+  useEffect(() => {
+    calculatePercentages();
+  }, [topics, customItems, calculationMethod]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCourse) return;
 
     const templateData = {
+      userId: user.email, // Use email as userId
       learningPlanId: selectedCourse,
       topics: topics.map(topic => ({
-        topicId: topic.id,
-        topicName: topic.name,
-        currentProgress: template?.topics.find(t => t.topicId === topic.id)?.currentProgress || 0
+        topicId: topic.title,
+        topicName: topic.title,
+        currentProgress: template?.topics.find(t => t.topicId === topic.title)?.currentProgress || 0
       })),
       customItems: customItems.map(item => ({
         name: item.name,
-        currentProgress: item.currentProgress || 0
+        currentProgress: item.currentProgress || 0,
+        finishDate: item.finishDate
       }))
     };
 
-    onSubmit(templateData);
+    try {
+      console.log('Submitting template data:', templateData);
+      if (template) {
+        await progressTemplateService.updateTemplate(template.id, templateData);
+      } else {
+        await progressTemplateService.createTemplate(templateData);
+      }
+      onSubmit(templateData);
+    } catch (err) {
+      console.error('Error saving template:', err);
+      if (err.status === 401) {
+        setError('Please log in to save the template');
+      } else {
+        setError('Failed to save template');
+      }
+    }
   };
+
+  if (!user) {
+    return <div className="progress-template-error">Please log in to access this feature</div>;
+  }
 
   if (loading) {
     return <div className="progress-template-loading">Loading courses...</div>;
@@ -89,6 +241,10 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   return (
     <form className="progress-template-form" onSubmit={handleSubmit}>
       <div className="form-header">
+        <div className="user-greeting">
+          <h2>👋 Hi, {user?.firstName || 'Student'}!</h2>
+          <p className="greeting-message">📚 Let's create your progress report and plan your study journey effectively!</p>
+        </div>
         <h3>{template ? 'Edit Progress Template' : 'Create Progress Template'}</h3>
       </div>
 
@@ -139,27 +295,72 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       {selectedCourse && (
         <>
           <div className="form-group">
+            <label>Percentage Calculation Method</label>
+            <div className="calculation-method-selector">
+              <div className="calculation-placeholder">
+                Select calculation method
+              </div>
+              <select 
+                value={calculationMethod} 
+                onChange={(e) => setCalculationMethod(e.target.value)}
+                className="calculation-select"
+              >
+                <option value="byTopics">Calculate by Topics First</option>
+                <option value="byTargets">Calculate by Total Targets</option>
+              </select>
+              <div className="calculation-info">
+                {calculationMethod ? (
+                  calculationMethod === 'byTopics' ? (
+                    <p>Each topic gets equal percentage, divided among its targets</p>
+                  ) : (
+                    <p>All targets get equal percentage, topics calculated based on their targets</p>
+                  )
+                ) : (
+                  <p>Please select a calculation method to see the explanation</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group">
             <label>Course Topics</label>
             <div className="progress-template-topics">
-              {topics.map((topic) => (
-                <div key={topic.id} className="progress-template-topic">
-                  <span>{topic.name}</span>
-                  {template && (
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={template.topics.find(t => t.topicId === topic.id)?.currentProgress || 0}
-                      onChange={(e) => {
-                        const newTopics = topics.map(t => 
-                          t.id === topic.id 
-                            ? { ...t, currentProgress: parseInt(e.target.value) || 0 }
-                            : t
-                        );
-                        setTopics(newTopics);
-                      }}
-                    />
-                  )}
+              {topics.map((topic, index) => (
+                <div key={`${topic.title}-${index}`} className="progress-template-topic">
+                  <div className="topic-info">
+                    <span>{topic.title}</span>
+                    <span className="topic-percentage">
+                      {topicPercentages[topic.title]?.toFixed(1)}%
+                    </span>
+                    {topics.filter(t => t.title.toLowerCase() === topic.title.toLowerCase()).length > 1 && (
+                      <span className="duplicate-warning">(Duplicate)</span>
+                    )}
+                  </div>
+                  <div className="topic-actions">
+                    {template && (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={template.topics.find(t => t.topicId === topic.title)?.currentProgress || 0}
+                        onChange={(e) => {
+                          const newTopics = topics.map(t => 
+                            t.title === topic.title 
+                              ? { ...t, currentProgress: parseInt(e.target.value) || 0 }
+                              : t
+                          );
+                          setTopics(newTopics);
+                        }}
+                      />
+                    )}
+                    <button 
+                      type="button" 
+                      className={`select-topic-btn ${selectedTopic?.title === topic.title ? 'selected' : ''}`}
+                      onClick={() => setSelectedTopic(topic)}
+                    >
+                      {selectedTopic?.title === topic.title ? 'Selected' : 'Select for Targets'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -167,6 +368,13 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
 
           <div className="form-group">
             <label>Custom Learning Targets</label>
+            {selectedTopic ? (
+              <div className="selected-topic-info">
+                <p>Adding targets for topic: <strong>{selectedTopic.title}</strong></p>
+              </div>
+            ) : (
+              <p className="select-topic-message">Select a topic above to add custom learning targets</p>
+            )}
             <div className="progress-template-custom-items">
               <div className="custom-item-input">
                 <input
@@ -174,38 +382,82 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                   value={newCustomItem}
                   onChange={(e) => setNewCustomItem(e.target.value)}
                   placeholder="Add custom target"
+                  disabled={!selectedTopic}
                 />
-                <button type="button" onClick={addCustomItem}>
+                <input
+                  type="date"
+                  value={newCustomItemDate}
+                  onChange={(e) => setNewCustomItemDate(e.target.value)}
+                  min={selectedCourseDetails?.startDate?.split('T')[0]}
+                  max={selectedCourseDetails?.endDate?.split('T')[0]}
+                  disabled={!selectedTopic}
+                />
+                <button 
+                  type="button" 
+                  onClick={addCustomItem}
+                  disabled={!selectedTopic}
+                >
                   Add
                 </button>
               </div>
+              {customItemError && (
+                <div className="error-message">{customItemError}</div>
+              )}
 
-              {customItems.map((item, index) => (
-                <div key={index} className="progress-template-custom-item">
-                  <span>{item.name}</span>
-                  <div className="custom-item-actions">
-                    {template && (
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={item.currentProgress || 0}
-                        onChange={(e) => {
-                          const newItems = customItems.map((i, idx) => 
-                            idx === index 
-                              ? { ...i, currentProgress: parseInt(e.target.value) || 0 }
-                              : i
-                          );
-                          setCustomItems(newItems);
-                        }}
-                      />
-                    )}
-                    <button type="button" onClick={() => removeCustomItem(index)}>
-                      Remove
-                    </button>
+              {topics.map(topic => {
+                const topicItems = customItems.filter(item => item.topicId === topic.title);
+                if (topicItems.length === 0) return null;
+
+                return (
+                  <div key={topic.title} className="topic-custom-items">
+                    <div className="topic-custom-header">
+                      <h4>{topic.title}</h4>
+                      <div className="topic-stats">
+                        <span className="item-count">{topicItems.length} target{topicItems.length !== 1 ? 's' : ''}</span>
+                        <span className="topic-percentage">{topicPercentages[topic.title]?.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="topic-custom-list">
+                      {topicItems.map((item, index) => (
+                        <div key={index} className="progress-template-custom-item">
+                          <div className="custom-item-info">
+                            <div className="custom-item-header">
+                              <span>{item.name}</span>
+                              <span className="target-percentage">
+                                {targetPercentages[item.name]?.toFixed(1)}%
+                              </span>
+                            </div>
+                            <span className="custom-item-date">
+                              Finish by: {new Date(item.finishDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="custom-item-actions">
+                            {template && (
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={item.currentProgress || 0}
+                                onChange={(e) => {
+                                  const newItems = customItems.map((i, idx) => 
+                                    idx === index 
+                                      ? { ...i, currentProgress: parseInt(e.target.value) || 0 }
+                                      : i
+                                  );
+                                  setCustomItems(newItems);
+                                }}
+                              />
+                            )}
+                            <button type="button" onClick={() => removeCustomItem(index)}>
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </>
