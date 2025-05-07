@@ -11,6 +11,7 @@ import Settings from './components/Settings';
 import LearningPlan from './components/LearningPlan/LearningPlan';
 import Courses from './components/Courses/Courses';
 import ProgressTemplate from './components/ProgressTemplate/ProgressTemplate';
+import Resources from './components/Resources/Resources';
 import './App.css';
 
 // Add Font Awesome
@@ -106,6 +107,11 @@ function App() {
                 <Route path="/courses" element={
                   <ProtectedRoute>
                     <Courses />
+                  </ProtectedRoute>
+                } />
+                <Route path="/resources" element={
+                  <ProtectedRoute>
+                    <Resources />
                   </ProtectedRoute>
                 } />
               </Routes>
