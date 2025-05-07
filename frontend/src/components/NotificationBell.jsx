@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getUnreadCount, getUnreadNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
+import { getUnreadCount, getUserNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import './NotificationBell.css';
 
 const NotificationBell = () => {
@@ -27,9 +27,9 @@ const NotificationBell = () => {
         if (!user?.email) return;
         try {
             console.log('Fetching notifications for user:', user.email);
-            const unreadNotifications = await getUnreadNotifications(user.email);
-            console.log('Unread notifications:', unreadNotifications);
-            setNotifications(unreadNotifications);
+            const allNotifications = await getUserNotifications(user.email);
+            console.log('All notifications:', allNotifications);
+            setNotifications(allNotifications);
         } catch (error) {
             console.error('Error fetching notifications:', error);
         }
@@ -70,9 +70,10 @@ const NotificationBell = () => {
     const handleNotificationClick = async (notification) => {
         if (!user?.email) return;
         try {
-            await markAsRead(notification.id);
-            setNotifications(notifications.filter(n => n.id !== notification.id));
-            setUnreadCount(prev => Math.max(0, prev - 1));
+            if (!notification.read) {
+                await markAsRead(notification.id);
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
 
             // Handle navigation based on notification type
             if (notification.type === 'COMMENT_REPLY' && notification.relatedId) {
@@ -88,8 +89,8 @@ const NotificationBell = () => {
         if (!user?.email) return;
         try {
             await markAllAsRead(user.email);
-            setNotifications([]);
             setUnreadCount(0);
+            fetchNotifications(); // Refresh the notifications list
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
         }
@@ -110,7 +111,7 @@ const NotificationBell = () => {
                 <div className="notification-dropdown">
                     <div className="notification-header">
                         <h3>Notifications</h3>
-                        {notifications.length > 0 && (
+                        {unreadCount > 0 && (
                             <button onClick={handleMarkAllRead} className="mark-all-read">
                                 Mark all as read
                             </button>
@@ -119,12 +120,12 @@ const NotificationBell = () => {
                     
                     <div className="notification-list">
                         {notifications.length === 0 ? (
-                            <p className="no-notifications">No new notifications</p>
+                            <p className="no-notifications">No notifications</p>
                         ) : (
                             notifications.map(notification => (
                                 <div
                                     key={notification.id}
-                                    className="notification-item"
+                                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
                                     onClick={() => handleNotificationClick(notification)}
                                 >
                                     <p className="notification-message">{notification.message}</p>

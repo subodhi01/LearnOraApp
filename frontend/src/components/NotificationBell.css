@@ -99,6 +99,15 @@
     border-bottom: none;
 }
 
+.notification-item.unread {
+    background-color: #f0f7ff;
+    border-left: 3px solid #007bff;
+}
+
+.notification-item.unread:hover {
+    background-color: #e6f2ff;
+}
+
 .notification-message {
     margin: 0 0 4px 0;
     color: #333;
