@@ -125,8 +125,33 @@
   margin-bottom: 10px;
 }
 
-.custom-item-input input {
+.custom-item-input input[type="text"] {
+  flex: 2;
+}
+
+.custom-item-input input[type="date"] {
   flex: 1;
+}
+
+.custom-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.custom-item-date {
+  font-size: 12px;
+  color: #666;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 14px;
+  margin: 5px 0;
+  padding: 5px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
 }
 
 .progress-template-custom-item {
