@@ -79,6 +79,9 @@ const NotificationBell = () => {
                 )
             );
 
+            // Update unread count
+            setUnreadCount(prevCount => Math.max(0, prevCount - 1));
+
             // Handle navigation based on notification type
             if (notification.type === 'COURSE_COMMENT') {
                 // Navigate to the course with the specific comment
@@ -103,7 +106,10 @@ const NotificationBell = () => {
         try {
             await markAllAsRead(user.email);
             setUnreadCount(0);
-            fetchNotifications(); // Refresh the notifications list
+            // Update all notifications to read in the state
+            setNotifications(prevNotifications =>
+                prevNotifications.map(notification => ({ ...notification, read: true }))
+            );
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
         }
