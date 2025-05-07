@@ -83,16 +83,18 @@ public class CommentService {
         CommentModel savedComment = commentRepository.save(comment);
         logger.info("Comment saved successfully: id={}", savedComment.getId());
 
-        // Create notification after saving the comment
-        if (comment.getParentId() != null && !comment.getParentId().isEmpty()) {
-            Optional<CommentModel> parentComment = commentRepository.findById(comment.getParentId());
-            if (parentComment.isPresent()) {
-                String message = String.format("%s replied to your comment", comment.getUsername());
-                logger.info("Creating notification for user {}: {}", parentComment.get().getUserId(), message);
-                try {
-                    // Log the user IDs for debugging
-                    logger.info("Comment user ID: {}", comment.getUserId());
-                    logger.info("Parent comment user ID: {}", parentComment.get().getUserId());
+        // Get the learning plan to find the course owner
+        LearningPlanModel plan = learningPlanRepository.findById(comment.getPostId())
+            .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        // Create notifications
+        try {
+            // If this is a reply, notify the parent comment owner
+            if (comment.getParentId() != null && !comment.getParentId().isEmpty()) {
+                Optional<CommentModel> parentComment = commentRepository.findById(comment.getParentId());
+                if (parentComment.isPresent() && !parentComment.get().getUserId().equals(comment.getUserId())) {
+                    String message = String.format("%s replied to your comment", comment.getUsername());
+                    logger.info("Creating notification for user {}: {}", parentComment.get().getUserId(), message);
                     
                     NotificationModel notification = notificationService.createNotification(
                         parentComment.get().getUserId(),
@@ -100,12 +102,30 @@ public class CommentService {
                         message,
                         savedComment.getId()
                     );
-                    logger.info("Notification created successfully: id={}, userId={}, message={}", 
-                        notification.getId(), notification.getUserId(), notification.getMessage());
-                } catch (Exception e) {
-                    logger.error("Failed to create notification: {}", e.getMessage(), e);
+                    logger.info("Reply notification created successfully: id={}", notification.getId());
                 }
             }
+
+            // Notify the course owner if the comment is not from them
+            if (!plan.getUserEmail().equals(comment.getUserId())) {
+                String message = String.format("%s commented on your course '%s': %s", 
+                    comment.getUsername(),
+                    plan.getTitle(),
+                    comment.getText().length() > 50 ? comment.getText().substring(0, 47) + "..." : comment.getText());
+                
+                logger.info("Creating notification for course owner {}: {}", plan.getUserEmail(), message);
+                
+                NotificationModel notification = notificationService.createNotification(
+                    plan.getUserEmail(),
+                    "COURSE_COMMENT",
+                    message,
+                    savedComment.getId()
+                );
+                logger.info("Course owner notification created successfully: id={}", notification.getId());
+            }
+        } catch (Exception e) {
+            logger.error("Failed to create notifications: {}", e.getMessage(), e);
+            // Don't throw the exception as the comment was already saved
         }
 
         return savedComment;
