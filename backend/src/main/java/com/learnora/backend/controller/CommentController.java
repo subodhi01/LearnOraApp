@@ -34,7 +34,9 @@ public class CommentController {
     @GetMapping("/post/{postId}")
     public ResponseEntity<?> getCommentsByPostId(@PathVariable String postId) {
         try {
-            List<CommentModel> comments = commentService.getCommentsByPostId(postId);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            List<CommentModel> comments = commentService.getCommentsByPostId(postId, userEmail);
             return ResponseEntity.ok(comments);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -60,6 +62,18 @@ public class CommentController {
             String userEmail = auth.getName();
             commentService.deleteComment(id, userEmail);
             return ResponseEntity.ok("Comment deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/toggle-visibility")
+    public ResponseEntity<?> toggleCommentVisibility(
+            @PathVariable String id,
+            @RequestParam String userId) {
+        try {
+            commentService.toggleCommentVisibility(id, userId);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

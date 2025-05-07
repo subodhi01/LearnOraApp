@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getUnreadCount, getUnreadNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
+import { getUnreadCount, getUserNotifications, markAsRead, markAllAsRead } from '../../services/notificationService';
 import './NotificationBell.css';
 
 const NotificationBell = () => {
@@ -27,9 +27,9 @@ const NotificationBell = () => {
         if (!user?.email) return;
         try {
             console.log('Fetching notifications for user:', user.email);
-            const unreadNotifications = await getUnreadNotifications(user.email);
-            console.log('Unread notifications:', unreadNotifications);
-            setNotifications(unreadNotifications);
+            const allNotifications = await getUserNotifications(user.email);
+            console.log('All notifications:', allNotifications);
+            setNotifications(allNotifications);
         } catch (error) {
             console.error('Error fetching notifications:', error);
         }
@@ -68,17 +68,34 @@ const NotificationBell = () => {
     };
 
     const handleNotificationClick = async (notification) => {
-        if (!user?.email) return;
         try {
+            // Mark the notification as read
             await markAsRead(notification.id);
-            setNotifications(notifications.filter(n => n.id !== notification.id));
-            setUnreadCount(prev => Math.max(0, prev - 1));
+            
+            // Update the notification in the state
+            setNotifications(prevNotifications =>
+                prevNotifications.map(n =>
+                    n.id === notification.id ? { ...n, read: true } : n
+                )
+            );
+
+            // Update unread count
+            setUnreadCount(prevCount => Math.max(0, prevCount - 1));
 
             // Handle navigation based on notification type
-            if (notification.type === 'COMMENT_REPLY' && notification.relatedId) {
-                // Navigate to the courses page with the comment ID
-                navigate(`/courses?commentId=${notification.relatedId}`);
+            if (notification.type === 'COURSE_COMMENT') {
+                // Navigate to the course with the specific comment
+                navigate(`/courses?courseId=${notification.courseId}&commentId=${notification.relatedId}`);
+            } else if (notification.type === 'COMMENT_REPLY') {
+                // Navigate to the comment reply
+                navigate(`/courses?courseId=${notification.courseId}&commentId=${notification.relatedId}`);
+            } else if (notification.type === 'COURSE_REACTION' || 
+                      notification.type === 'REACTION_REMOVED' || 
+                      notification.type === 'REACTION_CHANGED') {
+                // Navigate to the course that was reacted to
+                navigate(`/courses?courseId=${notification.courseId}`);
             }
+            // Add other notification type handlers as needed
         } catch (error) {
             console.error('Error handling notification click:', error);
         }
@@ -88,8 +105,11 @@ const NotificationBell = () => {
         if (!user?.email) return;
         try {
             await markAllAsRead(user.email);
-            setNotifications([]);
             setUnreadCount(0);
+            // Update all notifications to read in the state
+            setNotifications(prevNotifications =>
+                prevNotifications.map(notification => ({ ...notification, read: true }))
+            );
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
         }
@@ -110,7 +130,7 @@ const NotificationBell = () => {
                 <div className="notification-dropdown">
                     <div className="notification-header">
                         <h3>Notifications</h3>
-                        {notifications.length > 0 && (
+                        {unreadCount > 0 && (
                             <button onClick={handleMarkAllRead} className="mark-all-read">
                                 Mark all as read
                             </button>
@@ -119,12 +139,12 @@ const NotificationBell = () => {
                     
                     <div className="notification-list">
                         {notifications.length === 0 ? (
-                            <p className="no-notifications">No new notifications</p>
+                            <p className="no-notifications">No notifications</p>
                         ) : (
                             notifications.map(notification => (
                                 <div
                                     key={notification.id}
-                                    className="notification-item"
+                                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
                                     onClick={() => handleNotificationClick(notification)}
                                 >
                                     <p className="notification-message">{notification.message}</p>

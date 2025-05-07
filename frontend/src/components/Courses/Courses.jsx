@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Courses.css';
 import learningPlanService from '../../services/learningPlanService';
-import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../../services/commentService';
+import { createComment, getCommentsByPostId, updateComment, deleteComment, toggleCommentVisibility } from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { reactionService } from '../../services/reactionService';
+import { createNotification } from '../../services/notificationService';
+import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
+import ReactionSection from '../Reactions/ReactionSection';
+import CommentSection from '../Comments/CommentSection';
 
 const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
   const [inputValue, setInputValue] = useState(initialValue);
@@ -62,8 +67,16 @@ const Courses = () => {
   const [errors, setErrors] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
   const [targetCommentId, setTargetCommentId] = useState(null);
+  const [targetCourseId, setTargetCourseId] = useState(null);
   const { user } = useAuth();
   const commentRefs = useRef({});
+  const [reactions, setReactions] = useState({});
+  const [userReactions, setUserReactions] = useState({});
+  const [reactionError, setReactionError] = useState(null);
+
+  // Get comment ID from URL if present
+  const searchParams = new URLSearchParams(location.search);
+  const highlightCommentId = searchParams.get('commentId');
 
   // Add new state for user progress
   const [userProgress, setUserProgress] = useState({});
@@ -153,10 +166,44 @@ const Courses = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const commentId = params.get('commentId');
-    if (commentId) {
-      setTargetCommentId(commentId);
+    const courseId = params.get('courseId');
+    
+    if (courseId && !loading && sharedPlans.length > 0) {
+      setTargetCourseId(courseId);
+      
+      if (commentId) {
+        setTargetCommentId(commentId);
+      }
+
+      // Wait for the component to render and then scroll to the target course
+      const scrollToCourse = () => {
+        const courseElement = document.querySelector(`[data-course-id="${courseId}"]`);
+        if (courseElement) {
+          const headerOffset = 80;
+          const elementPosition = courseElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+          
+          // Add highlight animation
+          courseElement.classList.add('highlight-course');
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            courseElement.classList.remove('highlight-course');
+          }, 2000);
+        }
+      };
+
+      // Try scrolling immediately and after a short delay to ensure the element is rendered
+      scrollToCourse();
+      setTimeout(scrollToCourse, 100);
+      setTimeout(scrollToCourse, 500); // Additional attempt after a longer delay
     }
-  }, [location.search]);
+  }, [location.search, sharedPlans, loading]);
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) {
@@ -189,7 +236,6 @@ const Courses = () => {
       
       // Clear any errors and reset reply state
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: '' }));
-      setReplyingTo(null);
     } catch (error) {
       console.error('Error creating comment:', error);
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: error.message || 'Failed to post comment' }));
@@ -227,8 +273,16 @@ const Courses = () => {
     }
   };
 
-  const handleDeleteComment = async (planId, commentId) => {
-    if (!user) return;
+  const handleDeleteComment = async (commentId) => {
+    if (!user) {
+      console.error('No user object found');
+      return;
+    }
+
+    if (!commentId) {
+      console.error('Invalid comment ID');
+      return;
+    }
 
     if (!window.confirm('Are you sure you want to delete this comment?')) {
       return;
@@ -237,46 +291,67 @@ const Courses = () => {
     try {
       await deleteComment(commentId, user.email);
       
-      // Remove the comment from the state
-      setComments(prev => ({
-        ...prev,
-        [planId]: prev[planId].map(comment => {
-          if (comment.id === commentId) {
-            return null; // Remove the comment
-          }
-          // Check replies
-          if (comment.replies) {
-            return {
-              ...comment,
-              replies: comment.replies.filter(reply => reply.id !== commentId)
-            };
-          }
-          return comment;
-        }).filter(Boolean) // Remove null entries
-      }));
+      // Find the plan that contains this comment
+      const planWithComment = sharedPlans.find(plan => {
+        const planComments = comments[plan.id] || [];
+        return planComments.some(comment => 
+          comment.id === commentId || 
+          (comment.replies && comment.replies.some(reply => reply.id === commentId))
+        );
+      });
+
+      if (planWithComment) {
+        // Remove the comment from the state
+        setComments(prev => ({
+          ...prev,
+          [planWithComment.id]: prev[planWithComment.id].map(comment => {
+            if (comment.id === commentId) {
+              return null;
+            }
+            if (comment.replies) {
+              return {
+                ...comment,
+                replies: comment.replies.filter(reply => reply.id !== commentId)
+              };
+            }
+            return comment;
+          }).filter(Boolean)
+        }));
+      }
     } catch (error) {
       console.error('Error deleting comment:', error);
       setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to delete comment' }));
     }
   };
 
-  const toggleComments = async (planId) => {
-    if (!expandedComments[planId]) {
-      // If comments are not loaded yet, fetch them
-      if (!comments[planId]) {
-        try {
-          const planComments = await getCommentsByPostId(planId);
-          setComments(prev => ({ ...prev, [planId]: planComments }));
-        } catch (error) {
-          console.error(`Error fetching comments for plan ${planId}:`, error);
-          setErrors(prev => ({ ...prev, [planId]: 'Failed to load comments' }));
-        }
-      }
+  const handleToggleCommentVisibility = async (planId, commentId) => {
+    if (!user) return;
+
+    try {
+      await toggleCommentVisibility(commentId, user.email);
+      
+      // Update the comment in the state
+      setComments(prev => ({
+        ...prev,
+        [planId]: prev[planId].map(comment => {
+          if (comment.id === commentId) {
+            return { ...comment, hidden: !comment.hidden };
+          }
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply =>
+                reply.id === commentId ? { ...reply, hidden: !reply.hidden } : reply
+              )
+            };
+          }
+          return comment;
+        })
+      }));
+    } catch (error) {
+      console.error('Error toggling comment visibility:', error);
+      setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to toggle comment visibility' }));
     }
-    setExpandedComments(prev => ({
-      ...prev,
-      [planId]: !prev[planId]
-    }));
   };
 
   // Add function to start learning a plan
@@ -376,94 +451,91 @@ const Courses = () => {
     const isEditing = editingComment === comment.id;
     const isOwner = user && comment.userId === user.email;
 
-    const handleReplyClick = () => {
-      setReplyingTo(isReplying ? null : comment.id);
-      setErrors(prev => ({ ...prev, [`${planId}-${comment.id}`]: '' }));
+      if (!user || !user.token) {
+        setReactionError('Please log in to react to courses');
+        return;
+      }
+
+      if (currentReaction === reactionType) {
+        // Remove reaction if clicking the same button
+        await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
+        setUserReactions(prev => ({
+          ...prev,
+          [planId]: null
+        }));
+        setReactions(prev => ({
+          ...prev,
+          [planId]: {
+            likes: prev[planId].likes - (reactionType === 'LIKE' ? 1 : 0),
+            dislikes: prev[planId].dislikes - (reactionType === 'DISLIKE' ? 1 : 0)
+          }
+        }));
+      } else {
+        // Add new reaction
+        await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
+        setUserReactions(prev => ({
+          ...prev,
+          [planId]: reactionType
+        }));
+        setReactions(prev => ({
+          ...prev,
+          [planId]: {
+            likes: prev[planId].likes + (reactionType === 'LIKE' ? 1 : 0) - (currentReaction === 'LIKE' ? 1 : 0),
+            dislikes: prev[planId].dislikes + (reactionType === 'DISLIKE' ? 1 : 0) - (currentReaction === 'DISLIKE' ? 1 : 0)
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      if (error.message === 'Authentication required') {
+        setReactionError('Please log in to react to courses');
+      } else {
+        setReactionError('Failed to update reaction. Please try again.');
+      }
+    }
+  };
+
+  // Load reactions
+  useEffect(() => {
+    const loadReactions = async () => {
+      if (sharedPlans.length > 0) {
+        const reactionsData = {};
+        const userReactionsData = {};
+        
+        for (const plan of sharedPlans) {
+          try {
+            const counts = await reactionService.getReactionCounts('COURSE', plan.id);
+            reactionsData[plan.id] = counts;
+            
+            if (user) {
+              const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
+              userReactionsData[plan.id] = userReaction;
+            }
+          } catch (error) {
+            console.error('Error loading reactions for plan:', plan.id, error);
+            setReactionError('Unable to load reactions. Please make sure the backend server is running.');
+            reactionsData[plan.id] = { likes: 0, dislikes: 0 };
+            userReactionsData[plan.id] = null;
+          }
+        }
+        
+        setReactions(reactionsData);
+        setUserReactions(userReactionsData);
+      }
     };
 
-    return (
-      <div 
-        className={`comment-container level-${level}`}
-        data-comment-id={comment.id}
-      >
-        <div className="comment">
-          <div className="comment-header">
-            <span className="comment-username">{comment.username}</span>
-            <span className="comment-date">
-              {new Date(comment.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-          
-          {isEditing ? (
-            <CommentInput
-              initialValue={comment.text}
-              onSubmit={(text) => handleUpdateComment(planId, comment.id, text)}
-              onCancel={() => setEditingComment(null)}
-              placeholder="Edit your comment..."
-            />
-          ) : (
-            <>
-              <p className="comment-text">{comment.text}</p>
-              <div className="comment-actions">
-                {user && (
-                  <button
-                    className="reply-button"
-                    onClick={handleReplyClick}
-                    type="button"
-                  >
-                    {isReplying ? 'Cancel Reply' : 'Reply'}
-                  </button>
-                )}
-                {isOwner && (
-                  <>
-                    <button
-                      className="edit-button"
-                      onClick={() => setEditingComment(comment.id)}
-                      type="button"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDeleteComment(planId, comment.id)}
-                      type="button"
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
+    loadReactions();
+  }, [sharedPlans, user]);
+
+  const renderReactionError = () => {
+    if (reactionError) {
+      return (
+        <div className="reaction-error">
+          <p>{reactionError}</p>
         </div>
-
-        {isReplying && (
-          <div className="reply-form">
-            <CommentInput
-              onSubmit={(text) => handleCommentSubmit(planId, comment.id, text)}
-              onCancel={() => setReplyingTo(null)}
-              placeholder="Write a reply..."
-            />
-            {errors[`${planId}-${comment.id}`] && (
-              <span className="error-message">{errors[`${planId}-${comment.id}`]}</span>
-            )}
-          </div>
-        )}
-
-        {comment.replies?.length > 0 && (
-          <div className="replies-container">
-            {comment.replies.map((reply) => (
-              <CommentSection
-                key={reply.id}
-                planId={planId}
-                comment={reply}
-                level={level + 1}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -472,13 +544,18 @@ const Courses = () => {
 
   return (
     <div className="courses-container">
+      {renderReactionError()}
       <h2>Available Courses</h2>
       {sharedPlans.length === 0 ? (
         <p className="no-courses">No shared courses available yet.</p>
       ) : (
         <div className="courses-grid">
           {sharedPlans.map((plan) => (
-            <div key={plan.id} className="course-card">
+            <div 
+              key={plan.id} 
+              className="course-card"
+              data-course-id={plan.id}
+            >
               <div className="course-header">
                 <h3>{plan.title}</h3>
                 <span className="course-creator">
@@ -541,52 +618,18 @@ const Courses = () => {
                 )}
 
                 {/* Comments Section */}
-                <div className="comments-section">
-                  <div className="comments-header">
-                    <h4>Comments</h4>
-                    <button
-                      className="toggle-comments-button"
-                      onClick={() => toggleComments(plan.id)}
-                    >
-                      {expandedComments[plan.id] ? 'Hide Comments' : 'Show Comments'}
-                      <span className="comment-count">
-                        {comments[plan.id]?.length || 0}
-                      </span>
-                    </button>
-                  </div>
-
-                  {expandedComments[plan.id] && (
-                    <>
-                      {comments[plan.id]?.length > 0 ? (
-                        comments[plan.id].map((comment) => (
-                          <CommentSection
-                            key={comment.id}
-                            planId={plan.id}
-                            comment={comment}
-                          />
-                        ))
-                      ) : (
-                        <p>No comments yet. Be the first to comment!</p>
-                      )}
-
-                      {user ? (
-                        <div className="comment-form">
-                          <CommentInput
-                            onSubmit={(text) => handleCommentSubmit(plan.id, null, text)}
-                            placeholder="Add a comment..."
-                          />
-                          {errors[`${plan.id}-new`] && (
-                            <span className="error-message">{errors[`${plan.id}-new`]}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="login-prompt">
-                          Please <a href="/login">log in</a> to add a comment.
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
+                <CommentSection
+                  contentId={plan.id}
+                  comments={comments[plan.id] || []}
+                  onCommentSubmit={handleCommentSubmit}
+                  onCommentUpdate={handleUpdateComment}
+                  onCommentDelete={handleDeleteComment}
+                  onCommentToggleVisibility={handleToggleCommentVisibility}
+                  onReply={handleCommentSubmit}
+                  isContentOwner={user && plan.userEmail === user.email}
+                  errors={errors}
+                  highlightCommentId={highlightCommentId}
+                />
               </div>
             </div>
           ))}

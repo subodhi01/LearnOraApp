@@ -23,10 +23,31 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 20px;
   transition: transform 0.2s;
+  transition: all 0.3s ease;
 }
 
 .course-card:hover {
   transform: translateY(-2px);
+}
+
+.course-card.highlight-course {
+  animation: highlight-pulse 2s ease-in-out;
+  box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+}
+
+@keyframes highlight-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 123, 255, 0);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 123, 255, 0);
+  }
 }
 
 .course-header {
@@ -350,11 +371,30 @@
 }
 
 .delete-button {
+  background: none;
+  border: none;
   color: #dc3545;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .delete-button:hover {
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Style for course owner's delete button */
+.comment-actions .delete-button:not(:first-child) {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.comment-actions .delete-button:not(:first-child):hover {
+  opacity: 1;
 }
 
 .reply-form {
@@ -455,4 +495,143 @@
     background-color: #f8f9fa;
     box-shadow: none;
   }
+}
+
+.hide-button {
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.hide-button:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Style for course owner's hide button */
+.comment-actions .hide-button {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.comment-actions .hide-button:hover {
+  opacity: 1;
+}
+
+.hidden-comment {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+    border-left: 3px solid #6c757d;
+}
+
+.hidden-badge {
+    background-color: #6c757d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-left: 8px;
+}
+
+.unhide-button {
+    background: none;
+    border: none;
+    color: #28a745;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.unhide-button:hover {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Style for course owner's unhide button */
+.comment-actions .unhide-button {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.comment-actions .unhide-button:hover {
+    opacity: 1;
+}
+
+.reaction-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.reaction-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.reaction-button.like {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.reaction-button.like:hover {
+  background-color: #bbdefb;
+}
+
+.reaction-button.like.active {
+  background-color: #1976d2;
+  color: white;
+}
+
+.reaction-button.dislike {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.reaction-button.dislike:hover {
+  background-color: #ffcdd2;
+}
+
+.reaction-button.dislike.active {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.reaction-count {
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+@keyframes highlight-course {
+  0% {
+    background-color: rgba(255, 255, 0, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.highlight-course {
+  animation: highlight-course 2s ease-out;
 } 

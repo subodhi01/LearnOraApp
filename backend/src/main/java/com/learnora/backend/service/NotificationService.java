@@ -16,10 +16,10 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    public NotificationModel createNotification(String userId, String type, String message, String relatedId) {
-        logger.info("Creating notification for user {}: type={}, message={}, relatedId={}", 
-            userId, type, message, relatedId);
-        NotificationModel notification = new NotificationModel(userId, type, message, relatedId);
+    public NotificationModel createNotification(String userId, String type, String message, String relatedId, String courseId) throws Exception {
+        logger.info("Creating notification for user {}: type={}, message={}, relatedId={}, courseId={}", 
+            userId, type, message, relatedId, courseId);
+        NotificationModel notification = new NotificationModel(userId, type, message, relatedId, courseId);
         NotificationModel savedNotification = notificationRepository.save(notification);
         logger.info("Notification created successfully with ID: {}", savedNotification.getId());
         return savedNotification;
