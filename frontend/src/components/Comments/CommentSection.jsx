@@ -61,10 +61,13 @@ const CommentItem = ({
   onUpdateComment,
   replyingTo,
   editingComment,
-  errors
+  errors,
+  handleSubmit,
+  handleCancel
 }) => {
   const isReplying = replyingTo === comment.id;
   const isEditing = editingComment === comment.id;
+  const isReply = level > 0; // Check if this is a reply comment
 
   return (
     <div 
@@ -99,7 +102,7 @@ const CommentItem = ({
               >
                 {isReplying ? 'Cancel Reply' : 'Reply'}
               </button>
-              {isOwner && (
+              {isOwner && !isReply && (
                 <>
                   <button
                     className="edit-button"
@@ -115,7 +118,7 @@ const CommentItem = ({
                   </button>
                 </>
               )}
-              {!isOwner && isContentOwner && (
+              {isContentOwner && !isOwner && (
                 <>
                   <button
                     className="delete-button"
@@ -137,10 +140,10 @@ const CommentItem = ({
       </div>
 
       {isReplying && (
-        <div className="reply-form">
+        <div className="reply-typing">
           <CommentInput
-            onSubmit={(text) => onReply(comment.id, text)}
-            onCancel={() => onReplyClick(null)}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
             placeholder="Write a reply..."
           />
           {errors[`${comment.id}`] && (
@@ -167,6 +170,8 @@ const CommentItem = ({
               replyingTo={replyingTo}
               editingComment={editingComment}
               errors={errors}
+              handleSubmit={handleSubmit}
+              handleCancel={handleCancel}
             />
           ))}
         </div>
@@ -190,6 +195,7 @@ const CommentSection = ({
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [expandedComments, setExpandedComments] = useState({});
+  const [showCommentInput, setShowCommentInput] = useState(false);
 
   const handleReply = (commentId) => {
     setReplyingTo(commentId);
@@ -213,6 +219,7 @@ const CommentSection = ({
       onCommentSubmit(contentId, null, text);
     }
     handleCancel();
+    setShowCommentInput(false);
   };
 
   const handleUpdate = (commentId, newText) => {
@@ -231,68 +238,24 @@ const CommentSection = ({
     const canEdit = isCommentOwner(comment);
 
     return (
-      <div key={comment.id} className={`comment-container level-${level}`}>
-        <div className={`comment ${comment.hidden ? 'hidden-comment' : ''}`} data-comment-id={comment.id}>
-          <div className="comment-header">
-            <span className="comment-username">{comment.username}</span>
-            <span className="comment-date">
-              {new Date(comment.createdAt).toLocaleDateString()}
-              {comment.hidden && <span className="hidden-badge">Hidden</span>}
-            </span>
-          </div>
-          {isEditing ? (
-            <CommentInput
-              initialValue={comment.text}
-              onSubmit={(text) => handleUpdate(comment.id, text)}
-              onCancel={handleCancel}
-              placeholder="Edit your comment..."
-            />
-          ) : (
-            <p className="comment-text">{comment.text}</p>
-          )}
-          {commentError && <span className="error-message">{commentError}</span>}
-          <div className="comment-actions">
-            <button onClick={() => handleReply(comment.id)} className="reply-button">
-              Reply
-            </button>
-            {canEdit && (
-              <>
-                <button onClick={() => handleEdit(comment.id)} className="edit-button">
-                  Edit
-                </button>
-                <button onClick={() => onCommentDelete(contentId, comment.id)} className="delete-button">
-                  Delete
-                </button>
-              </>
-            )}
-            {isContentOwner && !canEdit && (
-              <>
-                <button onClick={() => onCommentDelete(contentId, comment.id)} className="delete-button">
-                  Delete
-                </button>
-                <button
-                  onClick={() => onCommentToggleVisibility(contentId, comment.id)}
-                  className={comment.hidden ? 'unhide-button' : 'hide-button'}
-                >
-                  {comment.hidden ? 'Unhide' : 'Hide'}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-        {isReplying && (
-          <CommentInput
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            placeholder="Write a reply..."
-          />
-        )}
-        {comment.replies && comment.replies.length > 0 && (
-          <div className="replies-container">
-            {comment.replies.map((reply) => renderComment(reply, level + 1))}
-          </div>
-        )}
-      </div>
+      <CommentItem
+        key={comment.id}
+        comment={comment}
+        level={level}
+        onReply={onReply}
+        onReplyClick={handleReply}
+        onEdit={handleEdit}
+        onDelete={onCommentDelete}
+        onToggleVisibility={onCommentToggleVisibility}
+        isOwner={canEdit}
+        isContentOwner={isContentOwner}
+        onUpdateComment={handleUpdate}
+        replyingTo={replyingTo}
+        editingComment={editingComment}
+        errors={errors}
+        handleSubmit={handleSubmit}
+        handleCancel={handleCancel}
+      />
     );
   };
 
@@ -311,10 +274,22 @@ const CommentSection = ({
       {expandedComments[contentId] && (
         <>
           {user ? (
-            <CommentInput
-              onSubmit={(text) => onCommentSubmit(contentId, null, text)}
-              placeholder="Write a comment..."
-            />
+            <>
+              {!showCommentInput ? (
+                <button
+                  className="new-comment-button"
+                  onClick={() => setShowCommentInput(true)}
+                >
+                  Write a Comment
+                </button>
+              ) : (
+                <CommentInput
+                  onSubmit={handleSubmit}
+                  onCancel={() => setShowCommentInput(false)}
+                  placeholder="Write a comment..."
+                />
+              )}
+            </>
           ) : (
             <p className="login-prompt">
               Please <a href="/login">log in</a> to add a comment.
