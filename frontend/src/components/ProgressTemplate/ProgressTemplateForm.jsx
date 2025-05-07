@@ -11,6 +11,8 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [topics, setTopics] = useState([]);
   const [customItems, setCustomItems] = useState(template?.customItems || []);
   const [newCustomItem, setNewCustomItem] = useState('');
+  const [newCustomItemDate, setNewCustomItemDate] = useState('');
+  const [customItemError, setCustomItemError] = useState('');
   const [courseStatus, setCourseStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,15 +53,20 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     console.log('Selected course ID:', courseId);
     setSelectedCourse(courseId);
     try {
-      const response = await axios.get(`/api/learning-plan/${courseId}`, {
+      const response = await axios.get(`http://localhost:8000/api/learning-plan/${courseId}`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
       });
       console.log('Course details response:', response.data);
-      setTopics(response.data.topics || []);
-      setCourseStatus(response.data.status);
-      setSelectedCourseDetails(response.data);
+      if (response.data && response.data.topics) {
+        setTopics(response.data.topics);
+        setCourseStatus(response.data.status);
+        setSelectedCourseDetails(response.data);
+      } else {
+        console.error('No topics found in response:', response.data);
+        setError('No topics found for this course');
+      }
     } catch (err) {
       console.error('Error fetching course details:', err);
       if (err.response?.status === 401) {
@@ -67,14 +74,41 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       } else {
         setError('Failed to fetch course details');
       }
+      setTopics([]);
+      setCourseStatus(null);
+      setSelectedCourseDetails(null);
     }
   };
 
+  const validateDate = (date) => {
+    if (!selectedCourseDetails) return false;
+    const targetDate = new Date(date);
+    const startDate = new Date(selectedCourseDetails.startDate);
+    const endDate = new Date(selectedCourseDetails.endDate);
+    return targetDate >= startDate && targetDate <= endDate;
+  };
+
   const addCustomItem = () => {
-    if (newCustomItem.trim()) {
-      setCustomItems([...customItems, { name: newCustomItem, progress: 0 }]);
-      setNewCustomItem('');
+    if (!newCustomItem.trim()) {
+      setCustomItemError('Please enter a target name');
+      return;
     }
+    if (!newCustomItemDate) {
+      setCustomItemError('Please select a finish date');
+      return;
+    }
+    if (!validateDate(newCustomItemDate)) {
+      setCustomItemError('Finish date must be between course start and end dates');
+      return;
+    }
+    setCustomItems([...customItems, { 
+      name: newCustomItem, 
+      progress: 0,
+      finishDate: newCustomItemDate 
+    }]);
+    setNewCustomItem('');
+    setNewCustomItemDate('');
+    setCustomItemError('');
   };
 
   const removeCustomItem = (index) => {
@@ -88,13 +122,14 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     const templateData = {
       learningPlanId: selectedCourse,
       topics: topics.map(topic => ({
-        topicId: topic.id,
-        topicName: topic.name,
-        currentProgress: template?.topics.find(t => t.topicId === topic.id)?.currentProgress || 0
+        topicId: topic.title,
+        topicName: topic.title,
+        currentProgress: template?.topics.find(t => t.topicId === topic.title)?.currentProgress || 0
       })),
       customItems: customItems.map(item => ({
         name: item.name,
-        currentProgress: item.currentProgress || 0
+        currentProgress: item.currentProgress || 0,
+        finishDate: item.finishDate
       }))
     };
 
@@ -179,17 +214,17 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
             <label>Course Topics</label>
             <div className="progress-template-topics">
               {topics.map((topic) => (
-                <div key={topic.id} className="progress-template-topic">
-                  <span>{topic.name}</span>
+                <div key={topic.title} className="progress-template-topic">
+                  <span>{topic.title}</span>
                   {template && (
                     <input
                       type="number"
                       min="0"
                       max="100"
-                      value={template.topics.find(t => t.topicId === topic.id)?.currentProgress || 0}
+                      value={template.topics.find(t => t.topicId === topic.title)?.currentProgress || 0}
                       onChange={(e) => {
                         const newTopics = topics.map(t => 
-                          t.id === topic.id 
+                          t.title === topic.title 
                             ? { ...t, currentProgress: parseInt(e.target.value) || 0 }
                             : t
                         );
@@ -212,14 +247,29 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                   onChange={(e) => setNewCustomItem(e.target.value)}
                   placeholder="Add custom target"
                 />
+                <input
+                  type="date"
+                  value={newCustomItemDate}
+                  onChange={(e) => setNewCustomItemDate(e.target.value)}
+                  min={selectedCourseDetails?.startDate?.split('T')[0]}
+                  max={selectedCourseDetails?.endDate?.split('T')[0]}
+                />
                 <button type="button" onClick={addCustomItem}>
                   Add
                 </button>
               </div>
+              {customItemError && (
+                <div className="error-message">{customItemError}</div>
+              )}
 
               {customItems.map((item, index) => (
                 <div key={index} className="progress-template-custom-item">
-                  <span>{item.name}</span>
+                  <div className="custom-item-info">
+                    <span>{item.name}</span>
+                    <span className="custom-item-date">
+                      Finish by: {new Date(item.finishDate).toLocaleDateString()}
+                    </span>
+                  </div>
                   <div className="custom-item-actions">
                     {template && (
                       <input
