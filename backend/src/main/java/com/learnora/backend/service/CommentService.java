@@ -111,12 +111,26 @@ public class CommentService {
         return savedComment;
     }
 
-    public List<CommentModel> getCommentsByPostId(String postId) throws Exception {
+    public List<CommentModel> getCommentsByPostId(String postId, String userEmail) throws Exception {
         if (postId == null || postId.isEmpty()) {
             throw new Exception("Post ID is required");
         }
+
+        // Get the learning plan to check if the user is the owner
+        LearningPlanModel plan = learningPlanRepository.findById(postId)
+            .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        boolean isCourseOwner = plan.getUserEmail().equals(userEmail);
+
         // Get all comments for the post
         List<CommentModel> allComments = commentRepository.findByPostId(postId);
+        
+        // Filter out hidden comments unless user is course owner
+        if (!isCourseOwner) {
+            allComments = allComments.stream()
+                .filter(comment -> !comment.isHidden())
+                .toList();
+        }
         
         // Filter out top-level comments (those without a parent)
         List<CommentModel> parentComments = allComments.stream()
@@ -186,5 +200,23 @@ public class CommentService {
         }
 
         commentRepository.deleteById(id);
+    }
+
+    public void toggleCommentVisibility(String id, String userId) throws Exception {
+        CommentModel comment = commentRepository.findById(id)
+            .orElseThrow(() -> new Exception("Comment not found"));
+
+        // Get the learning plan to check if the user is the owner
+        LearningPlanModel plan = learningPlanRepository.findById(comment.getPostId())
+            .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        // Only course owner can hide/unhide comments
+        if (!plan.getUserEmail().equals(userId)) {
+            throw new Exception("Unauthorized: Only the course owner can hide/unhide comments");
+        }
+
+        // Toggle the hidden status
+        comment.setHidden(!comment.isHidden());
+        commentRepository.save(comment);
     }
 }

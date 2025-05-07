@@ -19,9 +19,12 @@ public class CommentModel {
     private LocalDateTime createdAt;
     private String parentId; // ID of the parent comment if this is a reply
     private List<CommentModel> replies; // List of replies to this comment
+    private boolean hidden; // New field to track hidden status
 
     public CommentModel() {
+        this.createdAt = LocalDateTime.now();
         this.replies = new ArrayList<>();
+        this.hidden = false; // Initialize as not hidden
     }
 
     public CommentModel(String postId, String userId, String username, String text) {
@@ -31,6 +34,7 @@ public class CommentModel {
         this.text = text;
         this.createdAt = LocalDateTime.now();
         this.replies = new ArrayList<>();
+        this.hidden = false; // Initialize as not hidden
     }
 
     public String getId() {
@@ -95,5 +99,13 @@ public class CommentModel {
 
     public void setReplies(List<CommentModel> replies) {
         this.replies = replies;
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 }

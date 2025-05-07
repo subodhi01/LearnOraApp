@@ -75,11 +75,9 @@ export const updateComment = async (commentId, updates) => {
   }
 };
 
-export const deleteComment = async (commentId, userId) => {
+export const deleteComment = async (commentId, userEmail) => {
   try {
-    const response = await api.delete(`/${commentId}`, {
-      params: { userId },
-    });
+    const response = await api.delete(`/comments/${commentId}?userId=${userEmail}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting comment:', {
@@ -88,5 +86,19 @@ export const deleteComment = async (commentId, userId) => {
       status: error.response?.status,
     });
     throw new Error(error.response?.data || 'Failed to delete comment');
+  }
+};
+
+export const toggleCommentVisibility = async (commentId, userEmail) => {
+  try {
+    const response = await api.post(`/${commentId}/toggle-visibility?userId=${userEmail}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling comment visibility:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw new Error(error.response?.data || 'Failed to toggle comment visibility');
   }
 };

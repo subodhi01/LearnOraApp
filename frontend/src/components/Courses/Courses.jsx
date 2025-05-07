@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Courses.css';
 import learningPlanService from '../../services/learningPlanService';
-import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../../services/commentService';
+import { createComment, getCommentsByPostId, updateComment, deleteComment, toggleCommentVisibility } from '../../services/commentService';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 
@@ -272,9 +272,44 @@ const Courses = () => {
       setErrors(prev => ({ ...prev, [`${planId}-${comment.id}`]: '' }));
     };
 
+    const handleToggleVisibility = async () => {
+      if (!user) return;
+
+      try {
+        await toggleCommentVisibility(comment.id, user.email);
+        
+        // Update the comment in the state
+        setComments(prev => ({
+          ...prev,
+          [planId]: prev[planId].map(c => {
+            if (c.id === comment.id) {
+              return { ...c, hidden: !c.hidden };
+            }
+            if (c.replies) {
+              return {
+                ...c,
+                replies: c.replies.map(reply =>
+                  reply.id === comment.id ? { ...reply, hidden: !reply.hidden } : reply
+                )
+              };
+            }
+            return c;
+          })
+        }));
+      } catch (error) {
+        console.error('Error toggling comment visibility:', error);
+        setErrors(prev => ({ ...prev, [comment.id]: error.message || 'Failed to toggle comment visibility' }));
+      }
+    };
+
+    // Don't render if the comment is hidden and user is not course owner
+    if (comment.hidden && !isCourseOwner) {
+      return null;
+    }
+
     return (
       <div 
-        className={`comment-container level-${level}`}
+        className={`comment-container level-${level} ${comment.hidden ? 'hidden-comment' : ''}`}
         data-comment-id={comment.id}
       >
         <div className="comment">
@@ -283,6 +318,9 @@ const Courses = () => {
             <span className="comment-date">
               {new Date(comment.createdAt).toLocaleDateString()}
             </span>
+            {comment.hidden && isCourseOwner && (
+              <span className="hidden-badge">Hidden</span>
+            )}
           </div>
           
           {isEditing ? (
@@ -324,13 +362,22 @@ const Courses = () => {
                   </>
                 )}
                 {!isOwner && isCourseOwner && (
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDeleteComment(planId, comment.id)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
+                  <>
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDeleteComment(planId, comment.id)}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      className={comment.hidden ? "unhide-button" : "hide-button"}
+                      onClick={handleToggleVisibility}
+                      type="button"
+                    >
+                      {comment.hidden ? "Unhide" : "Hide"}
+                    </button>
+                  </>
                 )}
               </div>
             </>

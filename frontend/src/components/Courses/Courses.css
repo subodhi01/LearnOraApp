@@ -442,4 +442,73 @@ s
     background-color: #f8f9fa;
     box-shadow: none;
   }
+}
+
+.hide-button {
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.hide-button:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Style for course owner's hide button */
+.comment-actions .hide-button {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.comment-actions .hide-button:hover {
+  opacity: 1;
+}
+
+.hidden-comment {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+    border-left: 3px solid #6c757d;
+}
+
+.hidden-badge {
+    background-color: #6c757d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-left: 8px;
+}
+
+.unhide-button {
+    background: none;
+    border: none;
+    color: #28a745;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.unhide-button:hover {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Style for course owner's unhide button */
+.comment-actions .unhide-button {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.comment-actions .unhide-button:hover {
+    opacity: 1;
 } 
