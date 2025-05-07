@@ -589,4 +589,17 @@ s
   font-weight: 600;
   min-width: 1.5rem;
   text-align: center;
+}
+
+@keyframes highlight-course {
+  0% {
+    background-color: rgba(255, 255, 0, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.highlight-course {
+  animation: highlight-course 2s ease-out;
 } 

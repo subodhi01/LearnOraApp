@@ -24,9 +24,9 @@ public class ReactionService {
     @Autowired
     private NotificationService notificationService;
 
-    public Map<String, Object> addReaction(String userId, String contentId, String contentType, String reactionType) {
-        logger.info("Adding reaction: userId={}, contentId={}, contentType={}, reactionType={}", 
-            userId, contentId, contentType, reactionType);
+    public Map<String, Object> addReaction(String userId, String contentId, String contentType, String reactionType, String username) {
+        logger.info("Adding reaction: userId={}, contentId={}, contentType={}, reactionType={}, username={}", 
+            userId, contentId, contentType, reactionType, username);
 
         // Check if user already reacted
         ReactionModel existingReaction = reactionRepository.findByUserAndContent(userId, contentId, contentType)
@@ -42,6 +42,34 @@ public class ReactionService {
                 existingReaction.setReactionType(reactionType);
                 reactionRepository.save(existingReaction);
                 logger.info("Updated existing reaction to new type");
+
+                // Create notification for reaction change
+                try {
+                    if (contentType.equals("COURSE")) {
+                        var plan = learningPlanRepository.findById(contentId)
+                            .orElseThrow(() -> new RuntimeException("Course not found"));
+                        
+                        // Don't send notification if user is reacting to their own course
+                        if (!plan.getUserEmail().equals(userId)) {
+                            String message = String.format("%s changed their reaction to %s on your course '%s'", 
+                                username, 
+                                reactionType.equals("LIKE") ? "like" : "dislike",
+                                plan.getTitle());
+                            
+                            notificationService.createNotification(
+                                plan.getUserEmail(),
+                                "REACTION_CHANGED",
+                                message,
+                                contentId,
+                                contentId
+                            );
+                            logger.info("Created notification for reaction change");
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to create notification for reaction change: {}", e.getMessage());
+                    // Don't throw the exception as the reaction was already updated
+                }
             }
         } else {
             // Create new reaction
@@ -58,7 +86,7 @@ public class ReactionService {
                     // Don't send notification if user is reacting to their own course
                     if (!plan.getUserEmail().equals(userId)) {
                         String message = String.format("%s %s your course '%s'", 
-                            userId, 
+                            username, 
                             reactionType.equals("LIKE") ? "liked" : "disliked",
                             plan.getTitle());
                         
@@ -98,9 +126,9 @@ public class ReactionService {
             .orElse(null);
     }
 
-    public void removeReaction(String userId, String contentId, String contentType) {
-        logger.info("Removing reaction: userId={}, contentId={}, contentType={}", 
-            userId, contentId, contentType);
+    public void removeReaction(String userId, String contentId, String contentType, String username) {
+        logger.info("Removing reaction: userId={}, contentId={}, contentType={}, username={}", 
+            userId, contentId, contentType, username);
 
         // Get the reaction before deleting it
         ReactionModel reaction = reactionRepository.findByUserAndContent(userId, contentId, contentType)
@@ -116,7 +144,7 @@ public class ReactionService {
                     // Don't send notification if user is removing reaction from their own course
                     if (!plan.getUserEmail().equals(userId)) {
                         String message = String.format("%s removed their %s from your course '%s'", 
-                            userId, 
+                            username, 
                             reaction.getReactionType().equals("LIKE") ? "like" : "dislike",
                             plan.getTitle());
                         

@@ -51,11 +51,11 @@ export const reactionService = {
         }
     },
 
-    addReaction: async (contentType, contentId, userId, reactionType) => {
+    addReaction: async (contentType, contentId, userId, reactionType, username) => {
         try {
-            console.log('Adding reaction:', { contentType, contentId, userId, reactionType });
+            console.log('Adding reaction:', { contentType, contentId, userId, reactionType, username });
             const response = await api.post(`/${contentType}/${contentId}`, null, {
-                params: { userId, reactionType }
+                params: { userId, reactionType, username }
             });
             return response.data;
         } catch (error) {
@@ -97,11 +97,11 @@ export const reactionService = {
         }
     },
 
-    removeReaction: async (contentType, contentId, userId) => {
+    removeReaction: async (contentType, contentId, userId, username) => {
         try {
-            console.log('Removing reaction:', { contentType, contentId, userId });
+            console.log('Removing reaction:', { contentType, contentId, userId, username });
             await api.delete(`/${contentType}/${contentId}`, {
-                params: { userId }
+                params: { userId, username }
             });
         } catch (error) {
             console.error('Error removing reaction:', error.message);

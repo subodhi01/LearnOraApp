@@ -131,16 +131,20 @@ const Courses = () => {
             behavior: 'smooth'
           });
           
+          // Add highlight animation
           courseElement.classList.add('highlight-course');
           
+          // Remove highlight after animation
           setTimeout(() => {
             courseElement.classList.remove('highlight-course');
           }, 2000);
         }
       };
 
+      // Try scrolling immediately and after a short delay to ensure the element is rendered
       scrollToCourse();
       setTimeout(scrollToCourse, 100);
+      setTimeout(scrollToCourse, 500); // Additional attempt after a longer delay
     }
   }, [location.search, sharedPlans, loading]);
 
@@ -310,7 +314,7 @@ const Courses = () => {
 
       if (currentReaction === reactionType) {
         // Remove reaction if clicking the same button
-        await reactionService.removeReaction('COURSE', planId, user.email);
+        await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
         setUserReactions(prev => ({
           ...prev,
           [planId]: null
@@ -324,7 +328,7 @@ const Courses = () => {
         }));
       } else {
         // Add new reaction
-        await reactionService.addReaction('COURSE', planId, user.email, reactionType);
+        await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
         setUserReactions(prev => ({
           ...prev,
           [planId]: reactionType

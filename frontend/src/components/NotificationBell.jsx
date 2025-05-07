@@ -86,7 +86,9 @@ const NotificationBell = () => {
             } else if (notification.type === 'COMMENT_REPLY') {
                 // Navigate to the comment reply
                 navigate(`/courses?courseId=${notification.courseId}&commentId=${notification.relatedId}`);
-            } else if (notification.type === 'COURSE_REACTION' || notification.type === 'REACTION_REMOVED') {
+            } else if (notification.type === 'COURSE_REACTION' || 
+                      notification.type === 'REACTION_REMOVED' || 
+                      notification.type === 'REACTION_CHANGED') {
                 // Navigate to the course that was reacted to
                 navigate(`/courses?courseId=${notification.courseId}`);
             }

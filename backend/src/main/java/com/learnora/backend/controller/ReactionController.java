@@ -27,8 +27,9 @@ public class ReactionController {
             @PathVariable String contentType,
             @PathVariable String contentId,
             @RequestParam String userId,
-            @RequestParam String reactionType) {
-        return ResponseEntity.ok(reactionService.addReaction(userId, contentId, contentType, reactionType));
+            @RequestParam String reactionType,
+            @RequestParam String username) {
+        return ResponseEntity.ok(reactionService.addReaction(userId, contentId, contentType, reactionType, username));
     }
 
     @GetMapping("/{contentType}/{contentId}")
@@ -50,8 +51,9 @@ public class ReactionController {
     public ResponseEntity<Void> removeReaction(
             @PathVariable String contentType,
             @PathVariable String contentId,
-            @RequestParam String userId) {
-        reactionService.removeReaction(userId, contentId, contentType);
+            @RequestParam String userId,
+            @RequestParam String username) {
+        reactionService.removeReaction(userId, contentId, contentType, username);
         return ResponseEntity.ok().build();
     }
 } 
