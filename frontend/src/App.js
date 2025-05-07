@@ -43,7 +43,31 @@ class ErrorBoundary extends React.Component {
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
-  if (!user) {
+  const isAuthenticated = () => {
+    try {
+      if (!user?.token) {
+        return false;
+      }
+
+      // Check if token is expired
+      const payload = JSON.parse(atob(user.token.split('.')[1]));
+      const expirationTime = payload.exp * 1000; // Convert to milliseconds
+      const isExpired = Date.now() >= expirationTime;
+
+      if (isExpired) {
+        console.log('Token is expired, logging out');
+        localStorage.removeItem('user');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      return false;
+    }
+  };
+
+  if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
   return children;
