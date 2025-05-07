@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import learningPlanService from '../../services/learningPlanService';
+import progressTemplateService from '../../services/progressTemplateService';
+import { useAuth } from '../../context/AuthContext';
 import './ProgressTemplate.css';
 
 const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
@@ -13,13 +15,18 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) {
+      setError('Please log in to access this feature');
+      return;
+    }
     fetchCourses();
     if (template?.learningPlanId) {
       handleCourseSelect(template.learningPlanId);
     }
-  }, []);
+  }, [user]);
 
   const fetchCourses = async () => {
     try {
@@ -30,7 +37,11 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       setError('');
     } catch (err) {
       console.error('Error fetching courses:', err);
-      setError('Failed to fetch courses');
+      if (err.status === 401) {
+        setError('Please log in to view courses');
+      } else {
+        setError('Failed to fetch courses');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,14 +51,22 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     console.log('Selected course ID:', courseId);
     setSelectedCourse(courseId);
     try {
-      const response = await axios.get(`/api/learning-plan/${courseId}`);
+      const response = await axios.get(`/api/learning-plan/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
       console.log('Course details response:', response.data);
       setTopics(response.data.topics || []);
       setCourseStatus(response.data.status);
       setSelectedCourseDetails(response.data);
     } catch (err) {
       console.error('Error fetching course details:', err);
-      setError('Failed to fetch course details');
+      if (err.response?.status === 401) {
+        setError('Please log in to view course details');
+      } else {
+        setError('Failed to fetch course details');
+      }
     }
   };
 
@@ -62,7 +81,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     setCustomItems(customItems.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCourse) return;
 
@@ -79,8 +98,26 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       }))
     };
 
-    onSubmit(templateData);
+    try {
+      if (template) {
+        await progressTemplateService.updateTemplate(template.id, templateData);
+      } else {
+        await progressTemplateService.createTemplate(templateData);
+      }
+      onSubmit(templateData);
+    } catch (err) {
+      console.error('Error saving template:', err);
+      if (err.status === 401) {
+        setError('Please log in to save the template');
+      } else {
+        setError('Failed to save template');
+      }
+    }
   };
+
+  if (!user) {
+    return <div className="progress-template-error">Please log in to access this feature</div>;
+  }
 
   if (loading) {
     return <div className="progress-template-loading">Loading courses...</div>;
