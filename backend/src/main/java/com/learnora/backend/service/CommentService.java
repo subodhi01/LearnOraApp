@@ -3,8 +3,10 @@ package com.learnora.backend.service;
 import com.learnora.backend.model.CommentModel;
 import com.learnora.backend.model.UserModel;
 import com.learnora.backend.model.NotificationModel;
+import com.learnora.backend.model.LearningPlanModel;
 import com.learnora.backend.repository.CommentRepository;
 import com.learnora.backend.repository.UserRepository;
+import com.learnora.backend.repository.LearningPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -26,6 +28,9 @@ public class CommentService {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private LearningPlanRepository learningPlanRepository;
 
     public CommentModel createComment(CommentModel comment) throws Exception {
         logger.info("Creating comment: postId={}, userId={}, username={}, parentId={}", 
@@ -162,9 +167,13 @@ public class CommentService {
         CommentModel comment = commentRepository.findById(id)
             .orElseThrow(() -> new Exception("Comment not found"));
 
-        // Only allow the comment's owner to delete it
-        if (!comment.getUserId().equals(userId)) {
-            throw new Exception("Unauthorized: Only the comment owner can delete it");
+        // Get the learning plan to check if the user is the owner
+        LearningPlanModel plan = learningPlanRepository.findById(comment.getPostId())
+            .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        // Allow deletion if user is either the comment owner or the course owner
+        if (!comment.getUserId().equals(userId) && !plan.getUserEmail().equals(userId)) {
+            throw new Exception("Unauthorized: Only the comment owner or course owner can delete it");
         }
 
         // Delete all replies to this comment

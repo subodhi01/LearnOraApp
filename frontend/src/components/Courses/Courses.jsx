@@ -265,6 +265,7 @@ const Courses = () => {
     const isReplying = replyingTo === comment.id;
     const isEditing = editingComment === comment.id;
     const isOwner = user && comment.userId === user.email;
+    const isCourseOwner = user && sharedPlans.find(plan => plan.id === planId)?.userEmail === user.email;
 
     const handleReplyClick = () => {
       setReplyingTo(isReplying ? null : comment.id);
@@ -321,6 +322,15 @@ const Courses = () => {
                       Delete
                     </button>
                   </>
+                )}
+                {!isOwner && isCourseOwner && (
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDeleteComment(planId, comment.id)}
+                    type="button"
+                  >
+                    Delete
+                  </button>
                 )}
               </div>
             </>

@@ -199,11 +199,30 @@ s
 }
 
 .delete-button {
+  background: none;
+  border: none;
   color: #dc3545;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .delete-button:hover {
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Style for course owner's delete button */
+.comment-actions .delete-button:not(:first-child) {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.comment-actions .delete-button:not(:first-child):hover {
+  opacity: 1;
 }
 
 .reply-form {
