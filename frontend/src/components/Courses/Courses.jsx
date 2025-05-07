@@ -59,8 +59,10 @@ const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) =>
 
 const Courses = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sharedPlans, setSharedPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [comments, setComments] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
@@ -85,11 +87,12 @@ const Courses = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setError(null);
         const plans = await learningPlanService.getSharedPlans();
         setSharedPlans(Array.isArray(plans) ? plans : []);
         
         // Load user progress for each plan
-        if (user?.email) {
+        if (user?.email && plans.length > 0) {
           const progressPromises = plans.map(plan => 
             learningPlanService.getUserProgress(user.email, plan.id)
           );
@@ -104,24 +107,32 @@ const Courses = () => {
         }
         
         // Load comments for all plans
-        for (const plan of plans) {
-          try {
-            const planComments = await getCommentsByPostId(plan.id);
-            setComments(prev => ({ ...prev, [plan.id]: planComments }));
-          } catch (error) {
-            console.error(`Error loading comments for plan ${plan.id}:`, error);
-            setComments(prev => ({ ...prev, [plan.id]: [] }));
+        if (plans.length > 0) {
+          for (const plan of plans) {
+            try {
+              const planComments = await getCommentsByPostId(plan.id);
+              setComments(prev => ({ ...prev, [plan.id]: planComments }));
+            } catch (error) {
+              console.error(`Error loading comments for plan ${plan.id}:`, error);
+              setComments(prev => ({ ...prev, [plan.id]: [] }));
+            }
           }
         }
       } catch (error) {
         console.error('Error loading data:', error);
+        if (error.status === 401 || error.status === 403) {
+          setError('Please log in to view courses');
+          navigate('/login');
+        } else {
+          setError(error.message || 'Failed to load courses. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user?.email]);
+  }, [user?.email, navigate]);
 
   // Separate effect for handling target comment navigation
   useEffect(() => {
@@ -446,11 +457,8 @@ const Courses = () => {
     }
   };
 
-  const CommentSection = ({ planId, comment, level = 0 }) => {
-    const isReplying = replyingTo === comment.id;
-    const isEditing = editingComment === comment.id;
-    const isOwner = user && comment.userId === user.email;
-
+  const handleReaction = async (planId, reactionType, currentReaction) => {
+    try {
       if (!user || !user.token) {
         setReactionError('Please log in to react to courses');
         return;
@@ -493,6 +501,26 @@ const Courses = () => {
         setReactionError('Failed to update reaction. Please try again.');
       }
     }
+  };
+
+  const CommentSection = ({ planId, comment, level = 0 }) => {
+    const isReplying = replyingTo === comment.id;
+    const isEditing = editingComment === comment.id;
+    const isOwner = user && comment.userId === user.email;
+
+    return (
+      <div className="comment-section">
+        {/* Your existing comment section JSX */}
+        <div className="reaction-buttons">
+          <button onClick={() => handleReaction(planId, 'LIKE', userReactions[planId])}>
+            Like ({reactions[planId]?.likes || 0})
+          </button>
+          <button onClick={() => handleReaction(planId, 'DISLIKE', userReactions[planId])}>
+            Dislike ({reactions[planId]?.dislikes || 0})
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // Load reactions
@@ -539,7 +567,30 @@ const Courses = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading courses...</div>;
+    return (
+      <div className="courses-container">
+        <div className="loading">Loading courses...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="courses-container">
+        <div className="error-message">
+          <h2>Error</h2>
+          <p>{error}</p>
+          {error.includes('log in') && (
+            <button 
+              className="login-button"
+              onClick={() => navigate('/login')}
+            >
+              Go to Login
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -547,7 +598,10 @@ const Courses = () => {
       {renderReactionError()}
       <h2>Available Courses</h2>
       {sharedPlans.length === 0 ? (
-        <p className="no-courses">No shared courses available yet.</p>
+        <div className="no-courses">
+          <p>No shared courses available yet.</p>
+          <p>Be the first to share a learning plan!</p>
+        </div>
       ) : (
         <div className="courses-grid">
           {sharedPlans.map((plan) => (

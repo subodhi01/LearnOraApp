@@ -212,9 +212,15 @@ import React, { useState } from 'react';
        
        if (validateForm()) {
          try {
+           setErrors({}); // Clear any previous errors
            const response = await login(formData.email, formData.password);
-           console.log('Login response:', response);
-           console.log('Token present in response:', !!response.token);
+           
+           if (!response || !response.token) {
+             throw new Error('Invalid response from server');
+           }
+
+           console.log('Login successful:', response);
+           
            authLogin({
              id: response.id,
              firstName: response.firstName,
@@ -222,10 +228,24 @@ import React, { useState } from 'react';
              email: response.email,
              token: response.token
            });
+           
            navigate('/dashboard');
          } catch (error) {
-           console.error('Login error:', error);
-           setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
+           console.error('Login error details:', error);
+           let errorMessage = 'An unexpected error occurred. Please try again.';
+           
+           if (error.response) {
+             // Server responded with an error
+             errorMessage = error.response.data?.message || 'Invalid email or password';
+           } else if (error.request) {
+             // No response received
+             errorMessage = 'Unable to connect to server. Please check your internet connection.';
+           } else if (error.message) {
+             // Other error with message
+             errorMessage = error.message;
+           }
+           
+           setErrors({ submit: errorMessage });
          }
        }
      };
