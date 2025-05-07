@@ -14,4 +14,4 @@ public interface ProgressTemplateRepository extends MongoRepository<ProgressTemp
     Optional<ProgressTemplate> findByUserIdAndCourseId(String userId, String courseId);
     List<ProgressTemplate> findByUserIdAndIsActiveTrue(String userId);
     void deleteByUserIdAndCourseId(String userId, String courseId);
-} 
+}  

@@ -20,6 +20,12 @@ public class ProgressTemplateService {
 
     public ProgressTemplate createTemplate(ProgressTemplate template) {
         logger.debug("Creating new progress template: {}", template);
+<<<<<<< HEAD
+=======
+        if (template.getUserId() == null || template.getUserId().isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+>>>>>>> 08b40216d3445e3b60e7c6b8430a9ab8a5ea902e
         template.setCreatedAt(new Date());
         template.setUpdatedAt(new Date());
         template.setActive(true);
@@ -30,6 +36,10 @@ public class ProgressTemplateService {
     }
 
     public ProgressTemplate updateTemplate(String id, ProgressTemplate template) {
+<<<<<<< HEAD
+=======
+        logger.debug("Updating template with id: {}", id);
+>>>>>>> 08b40216d3445e3b60e7c6b8430a9ab8a5ea902e
         Optional<ProgressTemplate> existingTemplate = progressTemplateRepository.findById(id);
         if (existingTemplate.isPresent()) {
             ProgressTemplate updatedTemplate = existingTemplate.get();
@@ -39,22 +49,54 @@ public class ProgressTemplateService {
             calculatePercentages(updatedTemplate);
             return progressTemplateRepository.save(updatedTemplate);
         }
+<<<<<<< HEAD
         throw new RuntimeException("Progress template not found");
     }
 
     public void deleteTemplate(String id) {
+=======
+        throw new RuntimeException("Progress template not found with id: " + id);
+    }
+
+    public void deleteTemplate(String id) {
+        logger.debug("Deleting template with id: {}", id);
+        if (!progressTemplateRepository.existsById(id)) {
+            throw new RuntimeException("Progress template not found with id: " + id);
+        }
+>>>>>>> 08b40216d3445e3b60e7c6b8430a9ab8a5ea902e
         progressTemplateRepository.deleteById(id);
     }
 
     public List<ProgressTemplate> getUserTemplates(String userId) {
+<<<<<<< HEAD
         return progressTemplateRepository.findByUserIdAndIsActiveTrue(userId);
     }
 
     public Optional<ProgressTemplate> getTemplateByUserAndCourse(String userId, String courseId) {
+=======
+        logger.debug("Getting templates for user: {}", userId);
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        List<ProgressTemplate> templates = progressTemplateRepository.findByUserIdAndIsActiveTrue(userId);
+        logger.debug("Found {} templates for user {}", templates.size(), userId);
+        return templates;
+    }
+
+    public Optional<ProgressTemplate> getTemplateByUserAndCourse(String userId, String courseId) {
+        logger.debug("Getting template for user {} and course {}", userId, courseId);
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        if (courseId == null || courseId.isEmpty()) {
+            throw new IllegalArgumentException("Course ID is required");
+        }
+>>>>>>> 08b40216d3445e3b60e7c6b8430a9ab8a5ea902e
         return progressTemplateRepository.findByUserIdAndCourseId(userId, courseId);
     }
 
     private void calculatePercentages(ProgressTemplate template) {
+<<<<<<< HEAD
         int totalItems = template.getTopics().size() + template.getCustomItems().size();
         double basePercentage = 100.0 / totalItems;
 
@@ -66,10 +108,41 @@ public class ProgressTemplateService {
         // Set percentages for custom items
         for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
             item.setPercentage(basePercentage);
+=======
+        logger.debug("Calculating percentages for template: {}", template);
+        
+        // Calculate total items
+        int totalItems = (template.getTopics() != null ? template.getTopics().size() : 0) + 
+                        (template.getCustomItems() != null ? template.getCustomItems().size() : 0);
+        
+        if (totalItems == 0) {
+            logger.warn("No items found in template for percentage calculation");
+            return;
+        }
+        
+        double basePercentage = 100.0 / totalItems;
+        logger.debug("Base percentage per item: {}", basePercentage);
+
+        // Set percentages for topics
+        if (template.getTopics() != null) {
+            for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
+                topic.setPercentage(basePercentage);
+                logger.debug("Set topic {} percentage to {}", topic.getTopicName(), basePercentage);
+            }
+        }
+
+        // Set percentages for custom items
+        if (template.getCustomItems() != null) {
+            for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
+                item.setPercentage(basePercentage);
+                logger.debug("Set custom item {} percentage to {}", item.getName(), basePercentage);
+            }
+>>>>>>> 08b40216d3445e3b60e7c6b8430a9ab8a5ea902e
         }
 
         // Calculate total progress
         double totalProgress = 0;
+<<<<<<< HEAD
         for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
             totalProgress += (topic.getCurrentProgress() * topic.getPercentage() / 100);
         }
@@ -77,5 +150,30 @@ public class ProgressTemplateService {
             totalProgress += (item.getCurrentProgress() * item.getPercentage() / 100);
         }
         template.setTotalProgress(totalProgress);
+=======
+        
+        // Calculate progress from topics
+        if (template.getTopics() != null) {
+            for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
+                double topicProgress = (topic.getCurrentProgress() * topic.getPercentage() / 100);
+                totalProgress += topicProgress;
+                logger.debug("Topic {} progress: {}% (weighted: {}%)", 
+                    topic.getTopicName(), topic.getCurrentProgress(), topicProgress);
+            }
+        }
+        
+        // Calculate progress from custom items
+        if (template.getCustomItems() != null) {
+            for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
+                double itemProgress = (item.getCurrentProgress() * item.getPercentage() / 100);
+                totalProgress += itemProgress;
+                logger.debug("Custom item {} progress: {}% (weighted: {}%)", 
+                    item.getName(), item.getCurrentProgress(), itemProgress);
+            }
+        }
+        
+        template.setTotalProgress(totalProgress);
+        logger.debug("Calculated total progress: {}%", totalProgress);
+>>>>>>> 08b40216d3445e3b60e7c6b8430a9ab8a5ea902e
     }
 } 
