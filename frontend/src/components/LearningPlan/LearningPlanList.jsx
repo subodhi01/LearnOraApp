@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './LearningPlan.css';
 
 const calculateProgress = (plan) => {
@@ -13,8 +13,45 @@ const LearningPlanList = ({
   onEditPlan, 
   onDeletePlan, 
   onSharePlan,
-  selectedPlanId 
+  selectedPlanId,
+  onUpdatePlanProgress
 }) => {
+  // Track enrollment and topic completion per plan (local state for demo)
+  const [enrolledPlans, setEnrolledPlans] = useState({}); // { [planId]: true/false }
+  const [topicCompletion, setTopicCompletion] = useState({}); // { [planId]: [bool, ...] }
+
+  const handleEnroll = (planId, topics) => {
+    setEnrolledPlans(prev => ({ ...prev, [planId]: true }));
+    setTopicCompletion(prev => ({ ...prev, [planId]: topics.map(t => !!t.completed) }));
+  };
+
+  const handleToggleTopic = (planId, topicIdx) => {
+    setTopicCompletion(prev => {
+      const updated = [...(prev[planId] || [])];
+      updated[topicIdx] = !updated[topicIdx];
+      // Find the plan and update topics
+      const plan = plans.find(p => p.id === planId);
+      if (plan) {
+        const updatedTopics = plan.topics.map((t, i) => ({ ...t, completed: updated[i] }));
+        // Calculate new progress
+        const completed = updated.filter(Boolean).length;
+        const progress = Math.round((completed / updatedTopics.length) * 100);
+        // Set status to Finished if 100%
+        const newStatus = progress === 100 ? 'Finished' : plan.status === 'Finished' ? 'In Progress' : plan.status;
+        const updatedPlan = { ...plan, topics: updatedTopics, status: newStatus };
+        if (onUpdatePlanProgress) onUpdatePlanProgress(updatedPlan);
+      }
+      return { ...prev, [planId]: updated };
+    });
+  };
+
+  const calculateProgressLocal = (plan) => {
+    if (!plan.topics || plan.topics.length === 0) return 0;
+    if (!enrolledPlans[plan.id]) return calculateProgress(plan);
+    const completed = (topicCompletion[plan.id] || []).filter(Boolean).length;
+    return Math.round((completed / plan.topics.length) * 100);
+  };
+
   return (
     <div className="learning-plan-list">
       {plans.length === 0 ? (
@@ -45,6 +82,9 @@ const LearningPlanList = ({
                       </span>
                     )}
                   </div>
+                  {plan.status === 'Finished' && (
+                    <span style={{ color: '#388e3c', fontWeight: 700, marginLeft: 12, fontSize: 15, background: '#e8f5e9', borderRadius: 8, padding: '2px 10px' }}>Finished ✓</span>
+                  )}
                 </div>
                 
                 <div className="plan-content" onClick={() => onSelectPlan(plan)}>
@@ -57,7 +97,7 @@ const LearningPlanList = ({
                       Status: {plan.status}
                     </span>
                     <span className="plan-progress">
-                      Progress: {calculateProgress(plan)}%
+                      Progress: {plan.status === 'Finished' ? 100 : calculateProgress(plan)}%
                     </span>
                   </div>
                   <div className="plan-timeline">
@@ -71,6 +111,9 @@ const LearningPlanList = ({
                 <div className="expanded-plan">
                   <div className="expanded-header">
                     <h3>{plan.title}</h3>
+                    {enrolledPlans[plan.id] && calculateProgressLocal(plan) === 100 && (
+                      <span style={{ color: '#388e3c', fontWeight: 700, marginLeft: 16, fontSize: 18, background: '#e8f5e9', borderRadius: 8, padding: '4px 12px' }}>Finished ✓</span>
+                    )}
                     <button 
                       className="action-btn delete"
                       onClick={() => onSelectPlan(null)}
@@ -78,6 +121,21 @@ const LearningPlanList = ({
                       Close
                     </button>
                   </div>
+
+                  {/* Enroll button or Enrolled status */}
+                  {!enrolledPlans[plan.id] ? (
+                    <button
+                      className="create-plan-btn"
+                      style={{ marginBottom: 16 }}
+                      onClick={() => handleEnroll(plan.id, plan.topics || [])}
+                    >
+                      Enroll
+                    </button>
+                  ) : (
+                    <div style={{ marginBottom: 16, color: '#4CAF50', fontWeight: 600 }}>
+                      Enrolled ✓
+                    </div>
+                  )}
 
                   <div className="expanded-content">
                     <div className="expanded-main">
@@ -92,13 +150,25 @@ const LearningPlanList = ({
                           {plan.topics?.map((topic, index) => (
                             <div 
                               key={index} 
-                              className={`topic-item ${topic.completed ? 'completed' : ''}`}
+                              className={`topic-item ${(enrolledPlans[plan.id] ? topicCompletion[plan.id]?.[index] : topic.completed) ? 'completed' : ''}`}
                             >
                               <div className="topic-header">
                                 <span className="topic-title">{topic.title}</span>
-                                <span className="topic-status">
-                                  {topic.completed ? 'Completed' : 'In Progress'}
-                                </span>
+                                {enrolledPlans[plan.id] ? (
+                                  <span className="topic-status" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={!!topicCompletion[plan.id]?.[index]}
+                                      onChange={() => handleToggleTopic(plan.id, index)}
+                                      style={{ marginRight: 6 }}
+                                    />
+                                    {topicCompletion[plan.id]?.[index] ? 'Completed' : 'In Progress'}
+                                  </span>
+                                ) : (
+                                  <span className="topic-status">
+                                    {topic.completed ? 'Completed' : 'In Progress'}
+                                  </span>
+                                )}
                               </div>
                               {topic.resources && (
                                 <div className="topic-resources">
@@ -117,11 +187,11 @@ const LearningPlanList = ({
                         <div className="progress-bar">
                           <div 
                             className="progress-fill"
-                            style={{ width: `${calculateProgress(plan)}%` }}
+                            style={{ width: `${calculateProgressLocal(plan)}%` }}
                           />
                         </div>
                         <div className="progress-stats">
-                          <span>{calculateProgress(plan)}% Complete</span>
+                          <span>{calculateProgressLocal(plan)}% Complete</span>
                           <span>{plan.topics?.length || 0} Total Topics</span>
                         </div>
                       </div>

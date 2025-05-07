@@ -124,6 +124,15 @@ const LearningPlan = () => {
     setSelectedPlanId(plan ? plan.id : null);
   };
 
+  const handleUpdatePlanProgress = async (updatedPlan) => {
+    try {
+      await learningPlanService.updatePlan(updatedPlan, user.email);
+      setPlans(plans => plans.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan));
+    } catch (error) {
+      console.error('Failed to update plan progress:', error);
+    }
+  };
+
   if (!user?.email) {
     return <div className="auth-message">Please log in to view your learning plans.</div>;
   }
@@ -185,6 +194,7 @@ const LearningPlan = () => {
           onDeletePlan={handleDeletePlan}
           onSharePlan={handleSharePlan}
           selectedPlanId={selectedPlanId}
+          onUpdatePlanProgress={handleUpdatePlanProgress}
         />
       )}
     </div>
