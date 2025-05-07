@@ -74,6 +74,10 @@ const Courses = () => {
   const [userReactions, setUserReactions] = useState({});
   const [reactionError, setReactionError] = useState(null);
 
+  // Get comment ID from URL if present
+  const searchParams = new URLSearchParams(location.search);
+  const highlightCommentId = searchParams.get('commentId');
+
   // Load plans and comments
   useEffect(() => {
     const loadData = async () => {
@@ -208,8 +212,16 @@ const Courses = () => {
     }
   };
 
-  const handleDeleteComment = async (planId, commentId) => {
-    if (!user) return;
+  const handleDeleteComment = async (commentId) => {
+    if (!user) {
+      console.error('No user object found');
+      return;
+    }
+
+    if (!commentId) {
+      console.error('Invalid comment ID');
+      return;
+    }
 
     if (!window.confirm('Are you sure you want to delete this comment?')) {
       return;
@@ -218,22 +230,33 @@ const Courses = () => {
     try {
       await deleteComment(commentId, user.email);
       
-      // Remove the comment from the state
-      setComments(prev => ({
-        ...prev,
-        [planId]: prev[planId].map(comment => {
-          if (comment.id === commentId) {
-            return null;
-          }
-          if (comment.replies) {
-            return {
-              ...comment,
-              replies: comment.replies.filter(reply => reply.id !== commentId)
-            };
-          }
-          return comment;
-        }).filter(Boolean)
-      }));
+      // Find the plan that contains this comment
+      const planWithComment = sharedPlans.find(plan => {
+        const planComments = comments[plan.id] || [];
+        return planComments.some(comment => 
+          comment.id === commentId || 
+          (comment.replies && comment.replies.some(reply => reply.id === commentId))
+        );
+      });
+
+      if (planWithComment) {
+        // Remove the comment from the state
+        setComments(prev => ({
+          ...prev,
+          [planWithComment.id]: prev[planWithComment.id].map(comment => {
+            if (comment.id === commentId) {
+              return null;
+            }
+            if (comment.replies) {
+              return {
+                ...comment,
+                replies: comment.replies.filter(reply => reply.id !== commentId)
+              };
+            }
+            return comment;
+          }).filter(Boolean)
+        }));
+      }
     } catch (error) {
       console.error('Error deleting comment:', error);
       setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to delete comment' }));
@@ -431,6 +454,7 @@ const Courses = () => {
                   onReply={handleCommentSubmit}
                   isContentOwner={user && plan.userEmail === user.email}
                   errors={errors}
+                  highlightCommentId={highlightCommentId}
                 />
               </div>
             </div>

@@ -252,17 +252,15 @@
 }
 
 .highlight-comment {
-  animation: highlight-pulse 2s ease-out;
+  animation: highlight-comment 2s ease-out;
 }
 
-@keyframes highlight-pulse {
+@keyframes highlight-comment {
   0% {
-    background-color: #fff3cd;
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+    background-color: rgba(255, 255, 0, 0.2);
   }
   100% {
-    background-color: #f8f9fa;
-    box-shadow: none;
+    background-color: transparent;
   }
 }
 

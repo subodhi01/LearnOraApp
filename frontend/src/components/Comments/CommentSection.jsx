@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './CommentSection.css';
 
@@ -48,7 +48,7 @@ const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) =>
   );
 };
 
-const CommentItem = ({ 
+const CommentItem = React.forwardRef(({ 
   comment, 
   level = 0, 
   onReply,
@@ -64,13 +64,22 @@ const CommentItem = ({
   errors,
   handleSubmit,
   handleCancel
-}) => {
+}, ref) => {
   const isReplying = replyingTo === comment.id;
   const isEditing = editingComment === comment.id;
-  const isReply = level > 0; // Check if this is a reply comment
+  const isReply = level > 0;
+
+  const handleDelete = () => {
+    if (comment && comment.id) {
+      onDelete(comment.id);
+    } else {
+      console.error('Cannot delete comment: Invalid comment ID');
+    }
+  };
 
   return (
     <div 
+      ref={ref}
       className={`comment-container level-${level} ${comment.hidden ? 'hidden-comment' : ''}`}
       data-comment-id={comment.id}
     >
@@ -112,7 +121,7 @@ const CommentItem = ({
                   </button>
                   <button
                     className="delete-button"
-                    onClick={() => onDelete(comment.id)}
+                    onClick={handleDelete}
                   >
                     Delete
                   </button>
@@ -122,7 +131,7 @@ const CommentItem = ({
                 <>
                   <button
                     className="delete-button"
-                    onClick={() => onDelete(comment.id)}
+                    onClick={handleDelete}
                   >
                     Delete
                   </button>
@@ -178,7 +187,7 @@ const CommentItem = ({
       )}
     </div>
   );
-};
+});
 
 const CommentSection = ({
   contentId,
@@ -189,13 +198,42 @@ const CommentSection = ({
   onCommentToggleVisibility,
   onReply,
   isContentOwner,
-  errors = {}
+  errors = {},
+  highlightCommentId = null
 }) => {
   const { user } = useAuth();
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [expandedComments, setExpandedComments] = useState({});
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const highlightedCommentRef = useRef(null);
+
+  // Effect to handle comment highlighting and scrolling
+  useEffect(() => {
+    if (highlightCommentId) {
+      // Always expand comments when there's a highlightCommentId
+      setExpandedComments(prev => ({ ...prev, [contentId]: true }));
+      
+      // Wait for the next render cycle to ensure the comment is rendered
+      setTimeout(() => {
+        if (highlightedCommentRef.current) {
+          // Scroll to the highlighted comment
+          highlightedCommentRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          
+          // Add highlight animation
+          highlightedCommentRef.current.classList.add('highlight-comment');
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            highlightedCommentRef.current?.classList.remove('highlight-comment');
+          }, 2000);
+        }
+      }, 100);
+    }
+  }, [highlightCommentId, contentId]);
 
   const handleReply = (commentId) => {
     setReplyingTo(commentId);
@@ -236,6 +274,7 @@ const CommentSection = ({
     const isReplying = replyingTo === comment.id;
     const commentError = errors[comment.id];
     const canEdit = isCommentOwner(comment);
+    const isHighlighted = comment.id === highlightCommentId;
 
     return (
       <CommentItem
@@ -255,6 +294,7 @@ const CommentSection = ({
         errors={errors}
         handleSubmit={handleSubmit}
         handleCancel={handleCancel}
+        ref={isHighlighted ? highlightedCommentRef : null}
       />
     );
   };
@@ -271,7 +311,7 @@ const CommentSection = ({
           {comments.length > 0 && <span className="comment-count">{comments.length}</span>}
         </button>
       </div>
-      {expandedComments[contentId] && (
+      {(expandedComments[contentId] || highlightCommentId) && (
         <>
           {user ? (
             <>
