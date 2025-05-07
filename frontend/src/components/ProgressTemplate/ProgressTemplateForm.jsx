@@ -290,6 +290,9 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
           <div className="form-group">
             <label>Percentage Calculation Method</label>
             <div className="calculation-method-selector">
+              <div className="calculation-placeholder">
+                Select calculation method
+              </div>
               <select 
                 value={calculationMethod} 
                 onChange={(e) => setCalculationMethod(e.target.value)}
@@ -299,10 +302,14 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                 <option value="byTargets">Calculate by Total Targets</option>
               </select>
               <div className="calculation-info">
-                {calculationMethod === 'byTopics' ? (
-                  <p>Each topic gets equal percentage, divided among its targets</p>
+                {calculationMethod ? (
+                  calculationMethod === 'byTopics' ? (
+                    <p>Each topic gets equal percentage, divided among its targets</p>
+                  ) : (
+                    <p>All targets get equal percentage, topics calculated based on their targets</p>
+                  )
                 ) : (
-                  <p>All targets get equal percentage, topics calculated based on their targets</p>
+                  <p>Please select a calculation method to see the explanation</p>
                 )}
               </div>
             </div>
