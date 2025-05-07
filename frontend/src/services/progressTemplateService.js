@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/progress-template';
+const API_URL = 'http://localhost:8000/api/progress-templates';
 
 class ProgressTemplateError extends Error {
   constructor(message, status) {
@@ -12,7 +12,22 @@ class ProgressTemplateError extends Error {
 
 const getAuthHeaders = () => {
   const user = JSON.parse(localStorage.getItem('user'));
-  return user ? { 'Authorization': `Bearer ${user.token}` } : {};
+  console.log('User from localStorage:', user);
+  
+  if (!user || !user.token) {
+    console.error('No user or token found in localStorage');
+    return {};
+  }
+
+  const token = user.token.startsWith('Bearer ') ? user.token : `Bearer ${user.token}`;
+  console.log('Token being sent:', token);
+  
+  const headers = {
+    'Authorization': token,
+    'Content-Type': 'application/json'
+  };
+  console.log('Auth headers:', headers);
+  return headers;
 };
 
 const progressTemplateService = {
@@ -56,13 +71,20 @@ const progressTemplateService = {
   createTemplate: async (template) => {
     try {
       console.log('Creating new progress template:', template);
-      const response = await axios.post(API_URL, template, {
-        headers: getAuthHeaders()
-      });
+      const headers = getAuthHeaders();
+      console.log('Request headers:', headers);
+      
+      const response = await axios.post(API_URL, template, { headers });
       console.log('Created progress template:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating progress template:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
       throw new ProgressTemplateError(
         error.response?.data || 'Failed to create progress template',
         error.response?.status

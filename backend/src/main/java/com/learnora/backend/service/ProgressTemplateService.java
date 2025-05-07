@@ -1,25 +1,32 @@
-package com.learnora.service;
+package com.learnora.backend.service;
 
-import com.learnora.model.ProgressTemplate;
-import com.learnora.repository.ProgressTemplateRepository;
+import com.learnora.backend.model.ProgressTemplate;
+import com.learnora.backend.repository.ProgressTemplateRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ProgressTemplateService {
+    private static final Logger logger = LoggerFactory.getLogger(ProgressTemplateService.class);
 
     @Autowired
     private ProgressTemplateRepository progressTemplateRepository;
 
     public ProgressTemplate createTemplate(ProgressTemplate template) {
+        logger.debug("Creating new progress template: {}", template);
         template.setCreatedAt(new Date());
         template.setUpdatedAt(new Date());
         template.setActive(true);
         calculatePercentages(template);
-        return progressTemplateRepository.save(template);
+        ProgressTemplate savedTemplate = progressTemplateRepository.save(template);
+        logger.debug("Saved progress template: {}", savedTemplate);
+        return savedTemplate;
     }
 
     public ProgressTemplate updateTemplate(String id, ProgressTemplate template) {

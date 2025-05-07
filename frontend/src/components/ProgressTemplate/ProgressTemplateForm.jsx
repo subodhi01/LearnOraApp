@@ -198,6 +198,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     if (!selectedCourse) return;
 
     const templateData = {
+      userId: user.email, // Use email as userId
       learningPlanId: selectedCourse,
       topics: topics.map(topic => ({
         topicId: topic.title,
@@ -212,6 +213,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     };
 
     try {
+      console.log('Submitting template data:', templateData);
       if (template) {
         await progressTemplateService.updateTemplate(template.id, templateData);
       } else {
