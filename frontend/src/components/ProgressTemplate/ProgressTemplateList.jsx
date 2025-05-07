@@ -15,7 +15,7 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
       {templates.map((template) => (
         <div key={template.id} className="progress-template-card">
           <div className="template-header">
-            <h4>{template.learningPlanName}</h4>
+            <h4>{template.learningPlanName || 'Untitled Template'}</h4>
             <div className="template-actions">
               <button onClick={() => onEdit(template)}>Edit</button>
               <button onClick={() => onDelete(template.id)}>Delete</button>
@@ -26,9 +26,12 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
             <div className="template-section">
               <h5>Course Topics</h5>
               <div className="progress-items">
-                {template.topics.map((topic) => (
+                {template.topics && template.topics.map((topic) => (
                   <div key={topic.topicId} className="progress-item">
-                    <span>{topic.topicName}</span>
+                    <div className="progress-item-header">
+                      <span>{topic.topicName}</span>
+                      <span className="percentage-label">{topic.percentage?.toFixed(1)}%</span>
+                    </div>
                     <div className="progress-bar">
                       <div 
                         className="progress-fill"
@@ -47,7 +50,10 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
                 <div className="progress-items">
                   {template.customItems.map((item, index) => (
                     <div key={index} className="progress-item">
-                      <span>{item.name}</span>
+                      <div className="progress-item-header">
+                        <span>{item.name}</span>
+                        <span className="percentage-label">{item.percentage?.toFixed(1)}%</span>
+                      </div>
                       <div className="progress-bar">
                         <div 
                           className="progress-fill"
@@ -63,6 +69,9 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
           </div>
 
           <div className="template-footer">
+            <div className="total-progress">
+              <span>Total Progress: {template.totalProgress?.toFixed(1)}%</span>
+            </div>
             <span className="template-date">
               Last updated: {new Date(template.updatedAt).toLocaleDateString()}
             </span>

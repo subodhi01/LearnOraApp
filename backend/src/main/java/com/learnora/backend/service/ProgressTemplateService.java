@@ -77,33 +77,59 @@ public class ProgressTemplateService {
 
     private void calculatePercentages(ProgressTemplate template) {
         logger.debug("Calculating percentages for template: {}", template);
-        int totalItems = template.getTopics().size() + template.getCustomItems().size();
+        
+        // Calculate total items
+        int totalItems = (template.getTopics() != null ? template.getTopics().size() : 0) + 
+                        (template.getCustomItems() != null ? template.getCustomItems().size() : 0);
+        
         if (totalItems == 0) {
             logger.warn("No items found in template for percentage calculation");
             return;
         }
         
         double basePercentage = 100.0 / totalItems;
+        logger.debug("Base percentage per item: {}", basePercentage);
 
         // Set percentages for topics
-        for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
-            topic.setPercentage(basePercentage);
+        if (template.getTopics() != null) {
+            for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
+                topic.setPercentage(basePercentage);
+                logger.debug("Set topic {} percentage to {}", topic.getTopicName(), basePercentage);
+            }
         }
 
         // Set percentages for custom items
-        for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
-            item.setPercentage(basePercentage);
+        if (template.getCustomItems() != null) {
+            for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
+                item.setPercentage(basePercentage);
+                logger.debug("Set custom item {} percentage to {}", item.getName(), basePercentage);
+            }
         }
 
         // Calculate total progress
         double totalProgress = 0;
-        for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
-            totalProgress += (topic.getCurrentProgress() * topic.getPercentage() / 100);
+        
+        // Calculate progress from topics
+        if (template.getTopics() != null) {
+            for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
+                double topicProgress = (topic.getCurrentProgress() * topic.getPercentage() / 100);
+                totalProgress += topicProgress;
+                logger.debug("Topic {} progress: {}% (weighted: {}%)", 
+                    topic.getTopicName(), topic.getCurrentProgress(), topicProgress);
+            }
         }
-        for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
-            totalProgress += (item.getCurrentProgress() * item.getPercentage() / 100);
+        
+        // Calculate progress from custom items
+        if (template.getCustomItems() != null) {
+            for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
+                double itemProgress = (item.getCurrentProgress() * item.getPercentage() / 100);
+                totalProgress += itemProgress;
+                logger.debug("Custom item {} progress: {}% (weighted: {}%)", 
+                    item.getName(), item.getCurrentProgress(), itemProgress);
+            }
         }
+        
         template.setTotalProgress(totalProgress);
-        logger.debug("Calculated total progress: {}", totalProgress);
+        logger.debug("Calculated total progress: {}%", totalProgress);
     }
 } 
