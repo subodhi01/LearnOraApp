@@ -65,12 +65,30 @@ const Courses = () => {
   const { user } = useAuth();
   const commentRefs = useRef({});
 
-  // Load plans and comments
+  // Add new state for user progress
+  const [userProgress, setUserProgress] = useState({});
+
+  // Load plans, comments, and user progress
   useEffect(() => {
     const loadData = async () => {
       try {
         const plans = await learningPlanService.getSharedPlans();
         setSharedPlans(Array.isArray(plans) ? plans : []);
+        
+        // Load user progress for each plan
+        if (user?.email) {
+          const progressPromises = plans.map(plan => 
+            learningPlanService.getUserProgress(user.email, plan.id)
+          );
+          const progressResults = await Promise.all(progressPromises);
+          const progressMap = {};
+          progressResults.forEach((progress, index) => {
+            if (progress) {
+              progressMap[plans[index].id] = progress;
+            }
+          });
+          setUserProgress(progressMap);
+        }
         
         // Load comments for all plans
         for (const plan of plans) {
@@ -90,7 +108,7 @@ const Courses = () => {
     };
 
     loadData();
-  }, []); // Remove targetCommentId dependency
+  }, [user?.email]);
 
   // Separate effect for handling target comment navigation
   useEffect(() => {
@@ -261,6 +279,77 @@ const Courses = () => {
     }));
   };
 
+  // Add function to start learning a plan
+  const handleStartLearning = async (planId) => {
+    try {
+      if (!user?.email) {
+        setErrors(prev => ({ ...prev, [planId]: 'Please log in to start learning' }));
+        return;
+      }
+
+      const progress = await learningPlanService.startLearningPlan(user.email, planId);
+      setUserProgress(prev => ({
+        ...prev,
+        [planId]: progress
+      }));
+
+      // Update the plan status in the UI
+      setSharedPlans(prev => prev.map(plan => 
+        plan.id === planId 
+          ? { ...plan, status: 'In Progress' }
+          : plan
+      ));
+    } catch (error) {
+      console.error('Error starting learning plan:', error);
+      setErrors(prev => ({ 
+        ...prev, 
+        [planId]: error.message || 'Failed to start learning plan' 
+      }));
+    }
+  };
+
+  // Add function to update topic progress
+  const handleUpdateTopicProgress = async (planId, topicIndex, completed) => {
+    try {
+      if (!user?.email) {
+        setErrors(prev => ({ ...prev, [planId]: 'Please log in to update progress' }));
+        return;
+      }
+
+      const updatedProgress = await learningPlanService.updateTopicProgress(
+        user.email,
+        planId,
+        topicIndex,
+        completed
+      );
+
+      setUserProgress(prev => ({
+        ...prev,
+        [planId]: updatedProgress
+      }));
+
+      // Update the plan progress in the UI
+      setSharedPlans(prev => prev.map(plan => 
+        plan.id === planId 
+          ? { 
+              ...plan, 
+              topics: plan.topics.map((topic, idx) => 
+                idx === topicIndex 
+                  ? { ...topic, completed } 
+                  : topic
+              )
+            }
+          : plan
+      ));
+    } catch (error) {
+      console.error('Error updating topic progress:', error);
+      setErrors(prev => ({ 
+        ...prev, 
+        [planId]: error.message || 'Failed to update progress' 
+      }));
+    }
+  };
+
   const CommentSection = ({ planId, comment, level = 0 }) => {
     const isReplying = replyingTo === comment.id;
     const isEditing = editingComment === comment.id;
@@ -383,16 +472,52 @@ const Courses = () => {
                     {plan.topics?.length || 0} Topics
                   </span>
                   <span className="course-status">
-                    Status: {plan.status}
+                    Status: {userProgress[plan.id]?.status || plan.status}
                   </span>
                   <span className="course-progress">
-                    Progress: {calculateProgress(plan)}%
+                    Progress: {calculateProgress(userProgress[plan.id] || plan)}%
                   </span>
                 </div>
                 <div className="course-timeline">
                   <span>Start: {new Date(plan.startDate).toLocaleDateString()}</span>
                   <span>End: {new Date(plan.endDate).toLocaleDateString()}</span>
                 </div>
+
+                {user ? (
+                  !userProgress[plan.id] ? (
+                    <button
+                      className="start-learning-btn"
+                      onClick={() => handleStartLearning(plan.id)}
+                    >
+                      Start Learning
+                    </button>
+                  ) : (
+                    <div className="topics-progress">
+                      <h4>Your Progress</h4>
+                      {plan.topics.map((topic, index) => (
+                        <div key={index} className="topic-progress-item">
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={userProgress[plan.id]?.topics[index]?.completed || false}
+                              onChange={(e) => handleUpdateTopicProgress(plan.id, index, e.target.checked)}
+                            />
+                            {topic.title}
+                          </label>
+                          <span className="topic-resources">{topic.resources}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <p className="login-prompt">
+                    Please <a href="/login">log in</a> to start learning.
+                  </p>
+                )}
+
+                {errors[plan.id] && (
+                  <div className="error-message">{errors[plan.id]}</div>
+                )}
 
                 {/* Comments Section */}
                 <div className="comments-section">

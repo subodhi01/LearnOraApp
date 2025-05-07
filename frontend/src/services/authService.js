@@ -10,11 +10,29 @@ const api = axios.create({
   }
 });
 
+// Add response interceptor to handle token expiration
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 403) {
+      // Clear invalid token
+      localStorage.removeItem('user');
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const getAuthToken = () => {
   try {
     const user = JSON.parse(localStorage.getItem('user'));
     console.log('Retrieved user from localStorage:', user); // Debug log
-    return user?.token;
+    if (!user?.token) {
+      console.log('No token found in user data');
+      return null;
+    }
+    return user.token;
   } catch (error) {
     console.error('Error parsing user from localStorage:', error);
     return null;
@@ -24,14 +42,22 @@ export const getAuthToken = () => {
 export const getAuthHeaders = () => {
   const token = getAuthToken();
   console.log('Auth token:', token ? 'Present' : 'Missing'); // Debug log
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  if (!token) {
+    console.log('No auth token available');
+    return {};
+  }
+  return { 'Authorization': `Bearer ${token}` };
 };
 
 export const login = async (email, password) => {
   try {
     const response = await api.post('/signin', { email, password });
     if (response.data.token) {
-      localStorage.setItem('user', JSON.stringify(response.data));
+      const userData = {
+        ...response.data,
+        tokenExpiry: Date.now() + (5 * 60 * 60 * 1000) // 5 hours from now
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
     }
     return response.data;
   } catch (error) {
@@ -52,11 +78,40 @@ export const signup = async (userData) => {
 
 export const logout = () => {
   localStorage.removeItem('user');
+  window.location.href = '/login';
 };
 
 export const isAuthenticated = () => {
-  const token = getAuthToken();
-  return !!token;
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.token) {
+      return false;
+    }
+
+    // Check if token is expired
+    const payload = JSON.parse(atob(user.token.split('.')[1]));
+    const expirationTime = payload.exp * 1000; // Convert to milliseconds
+    const isExpired = Date.now() >= expirationTime;
+
+    if (isExpired) {
+      console.log('Token is expired, logging out');
+      logout();
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    return false;
+  }
+};
+
+export const checkAndRefreshToken = () => {
+  if (!isAuthenticated()) {
+    logout();
+    return false;
+  }
+  return true;
 };
 
 export default {
@@ -65,5 +120,6 @@ export default {
   login,
   signup,
   logout,
-  isAuthenticated
+  isAuthenticated,
+  checkAndRefreshToken
 }; 

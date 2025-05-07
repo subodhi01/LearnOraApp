@@ -1,11 +1,7 @@
 import axios from 'axios';
+import { getAuthHeaders } from './authService';
 
 const API_URL = 'http://localhost:8000/api/notifications';
-
-const getAuthHeaders = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  return user ? { 'Authorization': `Bearer ${user.token}` } : {};
-};
 
 export const getUserNotifications = async () => {
     try {

@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LearningPlanService {
@@ -111,6 +113,43 @@ public class LearningPlanService {
             e.printStackTrace();
             throw e;
         }
+    }
+
+    public LearningPlanModel startLearningPlan(String userEmail, String planId) throws Exception {
+        // Get the shared plan
+        LearningPlanModel sharedPlan = learningPlanRepository.findById(planId)
+                .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        if (!sharedPlan.isShared()) {
+            throw new Exception("This learning plan is not shared");
+        }
+
+        // Create a new plan for the user
+        LearningPlanModel userPlan = new LearningPlanModel();
+        userPlan.setUserEmail(userEmail);
+        userPlan.setTitle(sharedPlan.getTitle());
+        userPlan.setDescription(sharedPlan.getDescription());
+        userPlan.setStartDate(new Date());
+        userPlan.setEndDate(sharedPlan.getEndDate());
+        userPlan.setStatus("In Progress");
+        userPlan.setShared(false);
+        
+        // Copy topics with completed status reset
+        List<LearningPlanModel.Topic> userTopics = sharedPlan.getTopics().stream()
+                .map(topic -> {
+                    LearningPlanModel.Topic newTopic = new LearningPlanModel.Topic();
+                    newTopic.setTitle(topic.getTitle());
+                    newTopic.setResources(topic.getResources());
+                    newTopic.setCompleted(false);
+                    return newTopic;
+                })
+                .collect(Collectors.toList());
+        userPlan.setTopics(userTopics);
+        
+        // Calculate initial progress
+        userPlan.setProgress(0);
+
+        return learningPlanRepository.save(userPlan);
     }
 
     // helper method to calculate progress
