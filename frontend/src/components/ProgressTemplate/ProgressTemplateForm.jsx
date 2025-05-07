@@ -24,6 +24,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [targetPercentages, setTargetPercentages] = useState({});
 
   useEffect(() => {
+    console.log('Current user data:', user); // Debug log
     if (!user) {
       setError('Please log in to access this feature');
       return;
@@ -238,6 +239,10 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   return (
     <form className="progress-template-form" onSubmit={handleSubmit}>
       <div className="form-header">
+        <div className="user-greeting">
+          <h2>👋 Hi, {user?.firstName || 'Student'}!</h2>
+          <p className="greeting-message">📚 Let's create your progress report and plan your study journey effectively!</p>
+        </div>
         <h3>{template ? 'Edit Progress Template' : 'Create Progress Template'}</h3>
       </div>
 

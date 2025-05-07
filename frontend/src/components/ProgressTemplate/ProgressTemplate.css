@@ -15,6 +15,16 @@
 
 .form-header {
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 500;
 }
 
 .form-group {
@@ -416,4 +426,26 @@
 .topic-stats .topic-percentage {
   background-color: #e3f2fd;
   color: #1976d2;
+}
+
+.user-greeting {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.user-greeting h2 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.greeting-message {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.4;
 } 
