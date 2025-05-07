@@ -532,4 +532,61 @@ s
 
 .comment-actions .unhide-button:hover {
     opacity: 1;
+}
+
+.reaction-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.reaction-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.reaction-button.like {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.reaction-button.like:hover {
+  background-color: #bbdefb;
+}
+
+.reaction-button.like.active {
+  background-color: #1976d2;
+  color: white;
+}
+
+.reaction-button.dislike {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.reaction-button.dislike:hover {
+  background-color: #ffcdd2;
+}
+
+.reaction-button.dislike.active {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.reaction-count {
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: center;
 } 

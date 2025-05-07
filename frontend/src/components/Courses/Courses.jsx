@@ -681,6 +681,25 @@ const Courses = () => {
                   <span>End: {new Date(plan.endDate).toLocaleDateString()}</span>
                 </div>
 
+                {/* Reaction Section */}
+                <div className="reaction-section">
+                  <button
+                    onClick={() => handleReaction(plan.id, 'LIKE')}
+                    className={`reaction-button like ${userReactions[plan.id] === 'LIKE' ? 'active' : ''}`}
+                  >
+                    <FaThumbsUp />
+                    <span className="reaction-count">{reactions[plan.id]?.likes || 0}</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleReaction(plan.id, 'DISLIKE')}
+                    className={`reaction-button dislike ${userReactions[plan.id] === 'DISLIKE' ? 'active' : ''}`}
+                  >
+                    <FaThumbsDown />
+                    <span className="reaction-count">{reactions[plan.id]?.dislikes || 0}</span>
+                  </button>
+                </div>
+
                 {/* Comments Section */}
                 <div className="comments-section">
                   <div className="comments-header">
@@ -728,42 +747,6 @@ const Courses = () => {
                     </>
                   )}
                 </div>
-
-                <div className="flex justify-between items-center mt-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">
-                      {comments[plan.id]?.length || 0} comments
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => handleReaction(plan.id, 'LIKE')}
-                      className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
-                        userReactions[plan.id] === 'LIKE'
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      <FaThumbsUp />
-                      <span>{reactions[plan.id]?.likes || 0}</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleReaction(plan.id, 'DISLIKE')}
-                      className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
-                        userReactions[plan.id] === 'DISLIKE'
-                          ? 'bg-red-100 text-red-600'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      <FaThumbsDown />
-                      <span>{reactions[plan.id]?.dislikes || 0}</span>
-                    </button>
-                  </div>
-                </div>
-                {reactionError && (
-                  <p className="mt-2 text-sm text-red-600">{reactionError}</p>
-                )}
               </div>
             </div>
           ))}
