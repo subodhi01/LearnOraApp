@@ -114,4 +114,25 @@ public class LearningPlanController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PutMapping("/progress/topic")
+    public ResponseEntity<?> updateTopicProgress(@RequestBody Map<String, Object> request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            
+            String planId = (String) request.get("planId");
+            Integer topicIndex = (Integer) request.get("topicIndex");
+            Boolean completed = (Boolean) request.get("completed");
+            
+            if (planId == null || topicIndex == null || completed == null) {
+                return ResponseEntity.badRequest().body("Plan ID, topic index, and completion status are required");
+            }
+
+            LearningPlanModel updatedPlan = learningPlanService.updateTopicProgress(userEmail, planId, topicIndex, completed);
+            return ResponseEntity.ok(updatedPlan);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

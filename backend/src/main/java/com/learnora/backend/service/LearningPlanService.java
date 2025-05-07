@@ -167,4 +167,30 @@ public class LearningPlanService {
         double progress = (completed / (double) plan.getTopics().size()) * 100;
         return (int) Math.round(progress);
     }
+
+    public LearningPlanModel updateTopicProgress(String userEmail, String planId, Integer topicIndex, Boolean completed) throws Exception {
+        // Get the plan
+        LearningPlanModel plan = learningPlanRepository.findById(planId)
+                .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        // Verify user has permission to update this plan
+        if (!plan.getUserEmail().equals(userEmail)) {
+            throw new Exception("You don't have permission to update this plan");
+        }
+
+        // Verify topic index is valid
+        if (topicIndex < 0 || topicIndex >= plan.getTopics().size()) {
+            throw new Exception("Invalid topic index");
+        }
+
+        // Update the topic's completed status
+        LearningPlanModel.Topic topic = plan.getTopics().get(topicIndex);
+        topic.setCompleted(completed);
+
+        // Recalculate overall progress
+        plan.setProgress(calculateProgress(plan));
+
+        // Save and return the updated plan
+        return learningPlanRepository.save(plan);
+    }
 }

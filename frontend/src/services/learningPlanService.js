@@ -229,13 +229,13 @@ const learningPlanService = {
 
       console.log('Updating topic progress:', { userEmail, planId, topicIndex, completed });
       const response = await axios.put(`${API_URL}/progress/topic`, {
-        userEmail,
         planId,
         topicIndex,
         completed
       }, {
         headers: getAuthHeaders()
       });
+
       console.log('Updated topic progress:', response.data);
       return response.data;
     } catch (error) {
@@ -243,8 +243,11 @@ const learningPlanService = {
       if (error.response?.status === 401 || error.response?.status === 403) {
         throw new LearningPlanError('Please log in to update progress', error.response.status);
       }
+      if (error.response?.status === 404) {
+        throw new LearningPlanError('Learning plan or topic not found', 404);
+      }
       throw new LearningPlanError(
-        error.response?.data || 'Failed to update topic progress',
+        error.response?.data || 'Failed to update topic progress. Please try again.',
         error.response?.status
       );
     }

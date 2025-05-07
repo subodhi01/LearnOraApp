@@ -316,6 +316,9 @@ const Courses = () => {
         return;
       }
 
+      // Clear any previous errors for this plan
+      setErrors(prev => ({ ...prev, [planId]: '' }));
+
       const updatedProgress = await learningPlanService.updateTopicProgress(
         user.email,
         planId,
@@ -323,6 +326,11 @@ const Courses = () => {
         completed
       );
 
+      if (!updatedProgress) {
+        throw new Error('Failed to update progress. Please try again.');
+      }
+
+      // Update the user progress state
       setUserProgress(prev => ({
         ...prev,
         [planId]: updatedProgress
@@ -345,7 +353,20 @@ const Courses = () => {
       console.error('Error updating topic progress:', error);
       setErrors(prev => ({ 
         ...prev, 
-        [planId]: error.message || 'Failed to update progress' 
+        [planId]: error.message || 'Failed to update progress. Please try again.' 
+      }));
+
+      // Revert the checkbox state if the update failed
+      setUserProgress(prev => ({
+        ...prev,
+        [planId]: {
+          ...prev[planId],
+          topics: prev[planId]?.topics.map((topic, idx) => 
+            idx === topicIndex 
+              ? { ...topic, completed: !completed }
+              : topic
+          )
+        }
       }));
     }
   };
