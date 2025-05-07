@@ -18,6 +18,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [error, setError] = useState('');
   const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
   const { user } = useAuth();
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -88,7 +89,22 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     return targetDate >= startDate && targetDate <= endDate;
   };
 
+  const isDuplicateTopic = (topicTitle) => {
+    return topics.some(topic => topic.title.toLowerCase() === topicTitle.toLowerCase());
+  };
+
+  const isDuplicateCustomItem = (itemName, topicId) => {
+    return customItems.some(item => 
+      item.name.toLowerCase() === itemName.toLowerCase() && 
+      item.topicId === topicId
+    );
+  };
+
   const addCustomItem = () => {
+    if (!selectedTopic) {
+      setCustomItemError('Please select a topic first');
+      return;
+    }
     if (!newCustomItem.trim()) {
       setCustomItemError('Please enter a target name');
       return;
@@ -101,10 +117,15 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       setCustomItemError('Finish date must be between course start and end dates');
       return;
     }
+    if (isDuplicateCustomItem(newCustomItem.trim(), selectedTopic.title)) {
+      setCustomItemError('This learning target already exists for this topic');
+      return;
+    }
     setCustomItems([...customItems, { 
       name: newCustomItem, 
       progress: 0,
-      finishDate: newCustomItemDate 
+      finishDate: newCustomItemDate,
+      topicId: selectedTopic.title
     }]);
     setNewCustomItem('');
     setNewCustomItemDate('');
@@ -213,25 +234,39 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
           <div className="form-group">
             <label>Course Topics</label>
             <div className="progress-template-topics">
-              {topics.map((topic) => (
-                <div key={topic.title} className="progress-template-topic">
-                  <span>{topic.title}</span>
-                  {template && (
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={template.topics.find(t => t.topicId === topic.title)?.currentProgress || 0}
-                      onChange={(e) => {
-                        const newTopics = topics.map(t => 
-                          t.title === topic.title 
-                            ? { ...t, currentProgress: parseInt(e.target.value) || 0 }
-                            : t
-                        );
-                        setTopics(newTopics);
-                      }}
-                    />
-                  )}
+              {topics.map((topic, index) => (
+                <div key={`${topic.title}-${index}`} className="progress-template-topic">
+                  <div className="topic-info">
+                    <span>{topic.title}</span>
+                    {topics.filter(t => t.title.toLowerCase() === topic.title.toLowerCase()).length > 1 && (
+                      <span className="duplicate-warning">(Duplicate)</span>
+                    )}
+                  </div>
+                  <div className="topic-actions">
+                    {template && (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={template.topics.find(t => t.topicId === topic.title)?.currentProgress || 0}
+                        onChange={(e) => {
+                          const newTopics = topics.map(t => 
+                            t.title === topic.title 
+                              ? { ...t, currentProgress: parseInt(e.target.value) || 0 }
+                              : t
+                          );
+                          setTopics(newTopics);
+                        }}
+                      />
+                    )}
+                    <button 
+                      type="button" 
+                      className={`select-topic-btn ${selectedTopic?.title === topic.title ? 'selected' : ''}`}
+                      onClick={() => setSelectedTopic(topic)}
+                    >
+                      {selectedTopic?.title === topic.title ? 'Selected' : 'Select for Targets'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -239,6 +274,13 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
 
           <div className="form-group">
             <label>Custom Learning Targets</label>
+            {selectedTopic ? (
+              <div className="selected-topic-info">
+                <p>Adding targets for topic: <strong>{selectedTopic.title}</strong></p>
+              </div>
+            ) : (
+              <p className="select-topic-message">Select a topic above to add custom learning targets</p>
+            )}
             <div className="progress-template-custom-items">
               <div className="custom-item-input">
                 <input
@@ -246,6 +288,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                   value={newCustomItem}
                   onChange={(e) => setNewCustomItem(e.target.value)}
                   placeholder="Add custom target"
+                  disabled={!selectedTopic}
                 />
                 <input
                   type="date"
@@ -253,8 +296,13 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                   onChange={(e) => setNewCustomItemDate(e.target.value)}
                   min={selectedCourseDetails?.startDate?.split('T')[0]}
                   max={selectedCourseDetails?.endDate?.split('T')[0]}
+                  disabled={!selectedTopic}
                 />
-                <button type="button" onClick={addCustomItem}>
+                <button 
+                  type="button" 
+                  onClick={addCustomItem}
+                  disabled={!selectedTopic}
+                >
                   Add
                 </button>
               </div>
@@ -265,7 +313,10 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
               {customItems.map((item, index) => (
                 <div key={index} className="progress-template-custom-item">
                   <div className="custom-item-info">
-                    <span>{item.name}</span>
+                    <div className="custom-item-header">
+                      <span>{item.name}</span>
+                      <span className="custom-item-topic">Topic: {item.topicId}</span>
+                    </div>
                     <span className="custom-item-date">
                       Finish by: {new Date(item.finishDate).toLocaleDateString()}
                     </span>
