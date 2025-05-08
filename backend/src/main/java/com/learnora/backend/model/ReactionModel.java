@@ -26,7 +26,6 @@ public class ReactionModel {
         this.reactionType = reactionType;
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -74,4 +73,4 @@ public class ReactionModel {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-} 
+}

@@ -30,7 +30,6 @@ public class NotificationModel {
         this.courseId = courseId;
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -71,6 +70,14 @@ public class NotificationModel {
         this.relatedId = relatedId;
     }
 
+    public String getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(String courseId) {
+        this.courseId = courseId;
+    }
+
     public boolean isRead() {
         return read;
     }
@@ -86,12 +93,4 @@ public class NotificationModel {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-    public String getCourseId() {
-        return courseId;
-    }
-
-    public void setCourseId(String courseId) {
-        this.courseId = courseId;
-    }
-} 
+}

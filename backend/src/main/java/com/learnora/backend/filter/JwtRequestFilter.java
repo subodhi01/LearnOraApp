@@ -31,7 +31,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/auth/signin") || path.startsWith("/api/auth/signup");
+        return path.startsWith("/api/auth/signin") || path.startsWith("/api/auth/signup") || path.startsWith("/api/auth/google");
     }
 
     @Override
@@ -50,30 +50,44 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 email = jwtUtil.getEmailFromToken(jwt);
                 logger.debug("Extracted email from token: {}", email);
             } catch (Exception e) {
-                logger.error("JWT Token validation failed", e);
+                logger.error("JWT Token validation failed: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write("Invalid or expired token");
+                return;
             }
         } else {
             logger.debug("No valid Authorization header found");
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write("Missing or invalid Authorization header");
+            return;
         }
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(email);
-            logger.debug("Loaded user details for {}: {}", email, userDetails.getAuthorities());
+            try {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(email);
+                logger.debug("Loaded user details for {}: {}", email, userDetails.getAuthorities());
 
-            if (jwtUtil.validateToken(jwt)) {
-                logger.debug("Token is valid, setting authentication");
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                logger.debug("Authentication set in SecurityContext");
-            } else {
-                logger.debug("Token validation failed");
+                if (jwtUtil.validateToken(jwt)) {
+                    logger.debug("Token is valid, setting authentication");
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.debug("Authentication set in SecurityContext");
+                } else {
+                    logger.debug("Token validation failed");
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("Invalid token");
+                    return;
+                }
+            } catch (Exception e) {
+                logger.error("Error loading user details: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write("Error loading user details");
+                return;
             }
-        } else {
-            logger.debug("Email is null or authentication already exists");
         }
 
         chain.doFilter(request, response);
     }
-} 
+}
