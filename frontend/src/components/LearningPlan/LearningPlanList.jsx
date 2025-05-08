@@ -61,19 +61,31 @@ const LearningPlanList = ({
           {plans.map((plan) => (
             <div key={plan.id}>
               <div className="plan-card">
-                {plan.imageUrl && (
-                  <div className="plan-image">
-                    <img src={plan.imageUrl} alt={plan.title} />
-                    <div className="plan-overlay">
-                      <span className="plan-duration">
-                        {Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24 * 7))} Weeks
-                      </span>
-                      <span className="plan-level">
-                        {plan.topics?.length > 10 ? 'Advanced' : plan.topics?.length > 5 ? 'Intermediate' : 'Beginner'}
-                      </span>
-                    </div>
+                <div className="plan-image">
+                  {plan.imageUrl && plan.imageUrl.startsWith('data:image') ? (
+                    <img 
+                      src={plan.imageUrl}
+                      alt={plan.title}
+                      onError={(e) => {
+                        console.error('Error loading image:', e);
+                        e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80';
+                      }}
+                    />
+                  ) : (
+                    <img 
+                      src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+                      alt={plan.title}
+                    />
+                  )}
+                  <div className="plan-overlay">
+                    <span className="plan-duration">
+                      {Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24 * 7))} Weeks
+                    </span>
+                    <span className="plan-level">
+                      {plan.topics?.length > 10 ? 'Advanced' : plan.topics?.length > 5 ? 'Intermediate' : 'Beginner'}
+                    </span>
                   </div>
-                )}
+                </div>
                 <div className="plan-header">
                   <h3>{plan.title}</h3>
                   <div className="plan-actions">
@@ -110,11 +122,11 @@ const LearningPlanList = ({
                       </span>
                       <span className="stat-item">
                         <i className="fas fa-users"></i>
-                        {Math.floor(Math.random() * 5000)} Learners
+                        {plan.enrolledUsers?.length || 0} Learners
                       </span>
                       <span className="stat-item">
-                        <i className="fas fa-clock"></i>
-                        {Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24 * 7))} Weeks
+                        <i className="fas fa-calendar"></i>
+                        {new Date(plan.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="plan-progress-container">

@@ -2,6 +2,7 @@ package com.learnora.backend.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,19 +22,27 @@ public class LearningPlanModel {
     private String status;
     private boolean shared;
     private List<Topic> topics;
-    private String imageUrl; // URL to the plan's cover image
+    @Field("imageUrl")
+    private String imageUrl;
+    private Date createdAt;
+    private List<String> enrolledUsers;
 
     public LearningPlanModel() {
         this.topics = new ArrayList<>();
+        this.enrolledUsers = new ArrayList<>();
+        this.createdAt = new Date();
     }
 
-    public LearningPlanModel(String userEmail, String title, String description, Date startDate, Date endDate, List<Topic> topics) {
+    public LearningPlanModel(String userEmail, String title, String description, Date startDate, Date endDate, List<Topic> topics, String imageUrl) {
         this.userEmail = userEmail;
         this.title = title;
         this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;
         this.topics = topics != null ? topics : new ArrayList<>();
+        this.enrolledUsers = new ArrayList<>();
+        this.createdAt = new Date();
+        this.imageUrl = imageUrl;
     }
 
     public static class Topic {
@@ -160,5 +169,21 @@ public class LearningPlanModel {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<String> getEnrolledUsers() {
+        return enrolledUsers;
+    }
+
+    public void setEnrolledUsers(List<String> enrolledUsers) {
+        this.enrolledUsers = enrolledUsers;
     }
 }

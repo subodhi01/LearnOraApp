@@ -117,7 +117,10 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
       return;
     }
 
-    console.log('Submitting form with sharing status:', formData.shared);
+    // Log the form data to verify image is included
+    console.log('Submitting form with image:', formData.imageUrl ? 'Image present' : 'No image');
+    console.log('Image data:', formData.imageUrl ? formData.imageUrl.substring(0, 100) + '...' : 'No image data');
+    
     onSubmit(formData);
   };
 
@@ -141,19 +144,18 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
       setIsUploading(true);
       setErrors(prev => ({ ...prev, image: null }));
 
-      // Create a preview
+      // Create a preview and store the image
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        const base64String = reader.result;
+        console.log('Image loaded successfully:', base64String.substring(0, 100) + '...');
+        setImagePreview(base64String);
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: base64String
+        }));
       };
       reader.readAsDataURL(file);
-
-      // Here you would typically upload the image to your server or cloud storage
-      // For now, we'll use the preview URL as the imageUrl
-      setFormData(prev => ({
-        ...prev,
-        imageUrl: URL.createObjectURL(file)
-      }));
     } catch (error) {
       console.error('Error handling image:', error);
       setErrors(prev => ({ ...prev, image: 'Failed to process image' }));
