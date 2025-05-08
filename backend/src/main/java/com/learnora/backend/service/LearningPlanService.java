@@ -148,6 +148,17 @@ public class LearningPlanService {
         return learningPlanRepository.save(plan);
     }
 
+    public LearningPlanModel getUserProgress(String userEmail, String planId) throws Exception {
+        if (userEmail == null || userEmail.isEmpty()) {
+            throw new IllegalArgumentException("User email is required");
+        }
+        if (planId == null || planId.isEmpty()) {
+            throw new IllegalArgumentException("Plan ID is required");
+        }
+        return learningPlanRepository.findByIdAndUserEmail(planId, userEmail)
+                .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
+    }
+
     private Integer calculateProgress(LearningPlanModel plan) {
         if (plan.getTopics() == null || plan.getTopics().isEmpty()) {
             return 0;

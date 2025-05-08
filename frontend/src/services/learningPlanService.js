@@ -28,7 +28,6 @@ const learningPlanService = {
     } catch (error) {
       console.error('Error fetching learning plans:', error);
       if (error.response?.status === 401) {
-        // Handle unauthorized access
         throw new LearningPlanError('Please log in to view your learning plans', 401);
       }
       throw new LearningPlanError(
@@ -128,6 +127,61 @@ const learningPlanService = {
       );
     }
   },
+
+  getUserProgress: async (userEmail, planId) => {
+    try {
+      console.log('Fetching user progress for plan:', { userEmail, planId });
+      const response = await axios.get(`${API_URL}/${planId}/progress`, {
+        headers: getAuthHeaders()
+      });
+      console.log('Received user progress:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user progress:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to fetch user progress',
+        error.response?.status
+      );
+    }
+  },
+
+  startLearningPlan: async (userEmail, planId) => {
+    try {
+      console.log('Starting learning plan:', { userEmail, planId });
+      const response = await axios.post(`${API_URL}/start`, { planId }, {
+        headers: getAuthHeaders()
+      });
+      console.log('Started learning plan:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting learning plan:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to start learning plan',
+        error.response?.status
+      );
+    }
+  },
+
+  updateTopicProgress: async (userEmail, planId, topicIndex, completed) => {
+    try {
+      console.log('Updating topic progress:', { userEmail, planId, topicIndex, completed });
+      const response = await axios.put(`${API_URL}/progress/topic`, {
+        planId,
+        topicIndex,
+        completed
+      }, {
+        headers: getAuthHeaders()
+      });
+      console.log('Updated topic progress:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating topic progress:', error);
+      throw new LearningPlanError(
+        error.response?.data || 'Failed to update topic progress',
+        error.response?.status
+      );
+    }
+  }
 };
 
 export default learningPlanService;

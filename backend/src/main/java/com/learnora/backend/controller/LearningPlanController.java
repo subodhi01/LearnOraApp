@@ -135,4 +135,16 @@ public class LearningPlanController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/{planId}/progress")
+    public ResponseEntity<?> getUserProgress(@PathVariable String planId) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            LearningPlanModel progress = learningPlanService.getUserProgress(userEmail, planId);
+            return ResponseEntity.ok(progress);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

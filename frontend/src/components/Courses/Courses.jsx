@@ -38,7 +38,7 @@ const Courses = () => {
         // Load user progress for each plan
         if (user?.email) {
           const progressPromises = plans.map(plan =>
-            learningPlanService.getUserProgress(user.email, plan.id)
+            learningPlanService.getUserProgress(user.email, plan.id).catch(() => null)
           );
           const progressResults = await Promise.all(progressPromises);
           const progressMap = {};
@@ -492,6 +492,7 @@ const Courses = () => {
                   contentType="COURSE"
                   reactions={reactions}
                   userReactions={userReactions}
+ CENT
                   onReaction={handleReaction}
                   error={reactionError}
                 />
