@@ -9,9 +9,12 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
     endDate: '',
     status: 'Not Started',
     shared: false,
-    topics: [{ title: '', resources: '', completed: false }]
+    topics: [{ title: '', resources: '', completed: false }],
+    imageUrl: ''
   });
   const [errors, setErrors] = useState({});
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (plan) {
@@ -19,8 +22,12 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
         ...plan,
         startDate: new Date(plan.startDate).toISOString().split('T')[0],
         endDate: new Date(plan.endDate).toISOString().split('T')[0],
-        shared: plan.shared || false
+        shared: plan.shared || false,
+        imageUrl: plan.imageUrl || ''
       });
+      if (plan.imageUrl) {
+        setImagePreview(plan.imageUrl);
+      }
     }
   }, [plan]);
 
@@ -114,10 +121,93 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
     onSubmit(formData);
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, image: 'Please upload an image file' }));
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, image: 'Image size should be less than 5MB' }));
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setErrors(prev => ({ ...prev, image: null }));
+
+      // Create a preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Here you would typically upload the image to your server or cloud storage
+      // For now, we'll use the preview URL as the imageUrl
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: URL.createObjectURL(file)
+      }));
+    } catch (error) {
+      console.error('Error handling image:', error);
+      setErrors(prev => ({ ...prev, image: 'Failed to process image' }));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="learning-plan-form">
       <h3>{plan ? 'Edit Learning Plan' : 'Create Learning Plan'}</h3>
       <form onSubmit={handleSubmit}>
+        <div className="form-group image-upload">
+          <label htmlFor="image">Cover Image</label>
+          <div className="image-upload-container">
+            {imagePreview && (
+              <div className="image-preview">
+                <img src={imagePreview} alt="Preview" />
+                <button
+                  type="button"
+                  className="remove-image-btn"
+                  onClick={() => {
+                    setImagePreview(null);
+                    setFormData(prev => ({ ...prev, imageUrl: '' }));
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            <div className="upload-input">
+              <input
+                type="file"
+                id="image"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={isUploading}
+              />
+              <label htmlFor="image" className="upload-label">
+                {isUploading ? (
+                  <span>Uploading...</span>
+                ) : imagePreview ? (
+                  <span>Change Image</span>
+                ) : (
+                  <span>Choose Image</span>
+                )}
+              </label>
+            </div>
+            {errors.image && (
+              <span className="error-message">{errors.image}</span>
+            )}
+          </div>
+        </div>
+
         <div className="form-group">
           <label htmlFor="title">Title</label>
           <input

@@ -61,6 +61,11 @@ const LearningPlanList = ({
           {plans.map((plan) => (
             <div key={plan.id}>
               <div className="plan-card">
+                {plan.imageUrl && (
+                  <div className="plan-image">
+                    <img src={plan.imageUrl} alt={plan.title} />
+                  </div>
+                )}
                 <div className="plan-header">
                   <h3>{plan.title}</h3>
                   <div className="plan-actions">

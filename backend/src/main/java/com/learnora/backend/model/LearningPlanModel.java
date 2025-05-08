@@ -21,6 +21,7 @@ public class LearningPlanModel {
     private String status;
     private boolean shared;
     private List<Topic> topics;
+    private String imageUrl; // URL to the plan's cover image
 
     public LearningPlanModel() {
         this.topics = new ArrayList<>();
@@ -151,5 +152,13 @@ public class LearningPlanModel {
 
     public void setTopics(List<Topic> topics) {
         this.topics = topics;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

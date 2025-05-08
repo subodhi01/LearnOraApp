@@ -381,12 +381,22 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plan-duration, .plan-level {
   background-color: rgba(37, 99, 235, 0.9);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 500;
+}
+
+.plan-level {
+  background-color: rgba(16, 185, 129, 0.9);
 }
 
 .plan-card:hover .plan-image img {
@@ -415,6 +425,7 @@
   margin-bottom: 1rem;
   color: #64748b;
   font-size: 0.875rem;
+  flex-wrap: wrap;
 }
 
 .plan-meta span {
@@ -424,7 +435,7 @@
 }
 
 .plan-progress {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .progress-bar {
@@ -445,6 +456,42 @@
 .plan-progress span {
   font-size: 0.875rem;
   color: #64748b;
+}
+
+.plan-topics {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+}
+
+.plan-topics h4 {
+  color: #1e293b;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.plan-topics ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.plan-topics li {
+  color: #64748b;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plan-topics li::before {
+  content: '•';
+  color: #2563eb;
+  font-weight: bold;
 }
 
 .plan-link {
@@ -529,5 +576,9 @@
   .plan-meta {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .plan-topics ul {
+    grid-template-columns: 1fr;
   }
 } 

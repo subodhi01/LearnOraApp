@@ -146,6 +146,7 @@ const Home = () => {
               />
               <div className="plan-overlay">
                 <span className="plan-duration">6 Months</span>
+                <span className="plan-level">Advanced</span>
               </div>
             </div>
             <div className="plan-content">
@@ -154,12 +155,22 @@ const Home = () => {
               <div className="plan-meta">
                 <span><i className="fas fa-book"></i> 12 Courses</span>
                 <span><i className="fas fa-users"></i> 3.5k learners</span>
+                <span><i className="fas fa-clock"></i> 24 weeks</span>
               </div>
               <div className="plan-progress">
                 <div className="progress-bar">
                   <div className="progress" style={{ width: '75%' }}></div>
                 </div>
                 <span>75% Complete</span>
+              </div>
+              <div className="plan-topics">
+                <h4>Key Topics</h4>
+                <ul>
+                  <li>Frontend Development</li>
+                  <li>Backend Development</li>
+                  <li>Database Management</li>
+                  <li>DevOps & Deployment</li>
+                </ul>
               </div>
               <Link to="/learning-plans/full-stack" className="plan-link">
                 View Plan <i className="fas fa-arrow-right"></i>
@@ -175,6 +186,7 @@ const Home = () => {
               />
               <div className="plan-overlay">
                 <span className="plan-duration">8 Months</span>
+                <span className="plan-level">Intermediate</span>
               </div>
             </div>
             <div className="plan-content">
@@ -183,12 +195,22 @@ const Home = () => {
               <div className="plan-meta">
                 <span><i className="fas fa-book"></i> 15 Courses</span>
                 <span><i className="fas fa-users"></i> 2.8k learners</span>
+                <span><i className="fas fa-clock"></i> 32 weeks</span>
               </div>
               <div className="plan-progress">
                 <div className="progress-bar">
                   <div className="progress" style={{ width: '60%' }}></div>
                 </div>
                 <span>60% Complete</span>
+              </div>
+              <div className="plan-topics">
+                <h4>Key Topics</h4>
+                <ul>
+                  <li>Python Programming</li>
+                  <li>Data Analysis</li>
+                  <li>Machine Learning</li>
+                  <li>Deep Learning</li>
+                </ul>
               </div>
               <Link to="/learning-plans/data-science" className="plan-link">
                 View Plan <i className="fas fa-arrow-right"></i>
@@ -204,6 +226,7 @@ const Home = () => {
               />
               <div className="plan-overlay">
                 <span className="plan-duration">4 Months</span>
+                <span className="plan-level">Beginner</span>
               </div>
             </div>
             <div className="plan-content">
@@ -212,12 +235,22 @@ const Home = () => {
               <div className="plan-meta">
                 <span><i className="fas fa-book"></i> 8 Courses</span>
                 <span><i className="fas fa-users"></i> 4.2k learners</span>
+                <span><i className="fas fa-clock"></i> 16 weeks</span>
               </div>
               <div className="plan-progress">
                 <div className="progress-bar">
                   <div className="progress" style={{ width: '90%' }}></div>
                 </div>
                 <span>90% Complete</span>
+              </div>
+              <div className="plan-topics">
+                <h4>Key Topics</h4>
+                <ul>
+                  <li>SEO Optimization</li>
+                  <li>Social Media Marketing</li>
+                  <li>Content Strategy</li>
+                  <li>Analytics & Reporting</li>
+                </ul>
               </div>
               <Link to="/learning-plans/digital-marketing" className="plan-link">
                 View Plan <i className="fas fa-arrow-right"></i>
