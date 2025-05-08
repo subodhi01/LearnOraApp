@@ -24,6 +24,15 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <div className="dashboard-sidebar">
+        <div className="user-profile">
+          <div className="user-avatar">
+            {user?.firstName?.[0]?.toUpperCase() || 'U'}
+          </div>
+          <div className="user-info">
+            <h3>{user?.firstName} {user?.lastName}</h3>
+            <p>{user?.email}</p>
+          </div>
+        </div>
         <nav className="dashboard-nav">
           <Link 
             to="/dashboard/overview" 
@@ -46,6 +55,13 @@ const Dashboard = () => {
           >
             <i className="fas fa-chart-line"></i>
             Progress
+          </Link>
+          <Link 
+            to="/dashboard/progress-templates" 
+            className={`nav-item ${location.pathname === '/dashboard/progress-templates' ? 'active' : ''}`}
+          >
+            <i className="fas fa-tasks"></i>
+            Progress Templates
           </Link>
           <Link 
             to="/dashboard/certificates" 
