@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const LearningPlan = () => {
   const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ const LearningPlan = () => {
       const updated = await learningPlanService.updatePlan(updatedPlan, user.email);
       setPlans(plans.map(plan => (plan.id === updated.id ? updated : plan)));
       setIsEditing(false);
-      setSelectedPlan(null);
+      setSelectedPlanId(null);
     } catch (error) {
       console.error('Error updating plan:', error);
       if (error.status === 401) {
@@ -83,8 +83,8 @@ const LearningPlan = () => {
       setError(null);
       await learningPlanService.deletePlan(planId);
       setPlans(plans.filter(plan => plan.id !== planId));
-      if (selectedPlan?.id === planId) {
-        setSelectedPlan(null);
+      if (selectedPlanId === planId) {
+        setSelectedPlanId(null);
       }
     } catch (error) {
       console.error('Error deleting plan:', error);
@@ -117,6 +117,19 @@ const LearningPlan = () => {
       } else {
         setError(error.message || 'Failed to share learning plan');
       }
+    }
+  };
+
+  const handleSelectPlan = (plan) => {
+    setSelectedPlanId(plan ? plan.id : null);
+  };
+
+  const handleUpdatePlanProgress = async (updatedPlan) => {
+    try {
+      await learningPlanService.updatePlan(updatedPlan, user.email);
+      setPlans(plans => plans.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan));
+    } catch (error) {
+      console.error('Failed to update plan progress:', error);
     }
   };
 
@@ -159,37 +172,30 @@ const LearningPlan = () => {
         />
       )}
 
-      {isEditing && selectedPlan && (
+      {isEditing && selectedPlanId && (
         <LearningPlanForm
-          plan={selectedPlan}
+          plan={plans.find(p => p.id === selectedPlanId)}
           onSubmit={handleUpdatePlan}
           onCancel={() => {
             setIsEditing(false);
-            setSelectedPlan(null);
+            setSelectedPlanId(null);
           }}
         />
       )}
 
       {!isCreating && !isEditing && (
-        <>
-          <LearningPlanList
-            plans={plans}
-            onSelectPlan={setSelectedPlan}
-            onEditPlan={(plan) => {
-              setSelectedPlan(plan);
-              setIsEditing(true);
-            }}
-            onDeletePlan={handleDeletePlan}
-            onSharePlan={handleSharePlan}
-          />
-          
-          {selectedPlan && (
-            <LearningPlanDetail
-              plan={selectedPlan}
-              onClose={() => setSelectedPlan(null)}
-            />
-          )}
-        </>
+        <LearningPlanList
+          plans={plans}
+          onSelectPlan={handleSelectPlan}
+          onEditPlan={(plan) => {
+            setSelectedPlanId(plan.id);
+            setIsEditing(true);
+          }}
+          onDeletePlan={handleDeletePlan}
+          onSharePlan={handleSharePlan}
+          selectedPlanId={selectedPlanId}
+          onUpdatePlanProgress={handleUpdatePlanProgress}
+        />
       )}
     </div>
   );
