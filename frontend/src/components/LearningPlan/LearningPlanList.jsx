@@ -64,6 +64,14 @@ const LearningPlanList = ({
                 {plan.imageUrl && (
                   <div className="plan-image">
                     <img src={plan.imageUrl} alt={plan.title} />
+                    <div className="plan-overlay">
+                      <span className="plan-duration">
+                        {Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24 * 7))} Weeks
+                      </span>
+                      <span className="plan-level">
+                        {plan.topics?.length > 10 ? 'Advanced' : plan.topics?.length > 5 ? 'Intermediate' : 'Beginner'}
+                      </span>
+                    </div>
                   </div>
                 )}
                 <div className="plan-header">
@@ -95,20 +103,43 @@ const LearningPlanList = ({
                 <div className="plan-content" onClick={() => onSelectPlan(plan)}>
                   <p className="plan-description">{plan.description}</p>
                   <div className="plan-meta">
-                    <span className="plan-topics">
-                      {plan.topics?.length || 0} Topics
-                    </span>
-                    <span className="plan-status">
-                      Status: {plan.status}
-                    </span>
-                    <span className="plan-progress">
-                      Progress: {plan.status === 'Finished' ? 100 : calculateProgress(plan)}%
-                    </span>
+                    <div className="plan-stats">
+                      <span className="stat-item">
+                        <i className="fas fa-book"></i>
+                        {plan.topics?.length || 0} Topics
+                      </span>
+                      <span className="stat-item">
+                        <i className="fas fa-users"></i>
+                        {Math.floor(Math.random() * 5000)} Learners
+                      </span>
+                      <span className="stat-item">
+                        <i className="fas fa-clock"></i>
+                        {Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24 * 7))} Weeks
+                      </span>
+                    </div>
+                    <div className="plan-progress-container">
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill"
+                          style={{ width: `${calculateProgress(plan)}%` }}
+                        />
+                      </div>
+                      <span className="progress-text">{calculateProgress(plan)}% Complete</span>
+                    </div>
                   </div>
-                  <div className="plan-timeline">
-                    <span>Start: {new Date(plan.startDate).toLocaleDateString()}</span>
-                    <span>End: {new Date(plan.endDate).toLocaleDateString()}</span>
+                  <div className="plan-topics">
+                    {plan.topics?.slice(0, 4).map((topic, index) => (
+                      <span key={index} className="topic-tag">
+                        {topic.title}
+                      </span>
+                    ))}
+                    {plan.topics?.length > 4 && (
+                      <span className="topic-tag more">+{plan.topics.length - 4} more</span>
+                    )}
                   </div>
+                  <button className="view-plan-btn" onClick={() => onSelectPlan(plan)}>
+                    View Plan
+                  </button>
                 </div>
               </div>
 
