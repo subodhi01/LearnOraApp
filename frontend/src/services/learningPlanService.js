@@ -57,9 +57,15 @@ const learningPlanService = {
   createPlan: async (userEmail, plan) => {
     try {
       console.log('Creating new learning plan:', { userEmail, plan });
+      if (plan.imageUrl) {
+        console.log('Image data present:', plan.imageUrl.substring(0, 100) + '...');
+      }
       const response = await axios.post(API_URL, plan, { 
         params: { userEmail },
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        }
       });
       console.log('Created learning plan:', response.data);
       return response.data;
@@ -75,9 +81,15 @@ const learningPlanService = {
   updatePlan: async (plan, userEmail) => {
     try {
       console.log('Updating learning plan:', { plan, userEmail });
+      if (plan.imageUrl) {
+        console.log('Image data present:', plan.imageUrl.substring(0, 100) + '...');
+      }
       const response = await axios.put(API_URL, plan, { 
         params: { userEmail },
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        }
       });
       console.log('Updated learning plan:', response.data);
       return response.data;

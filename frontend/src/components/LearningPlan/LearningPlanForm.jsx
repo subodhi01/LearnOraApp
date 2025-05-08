@@ -15,6 +15,7 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (plan) {
@@ -94,74 +95,81 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validate dates before submission
-    const dateErrors = validateDates(formData.startDate, formData.endDate);
-    if (Object.keys(dateErrors).length > 0) {
-      setErrors(dateErrors);
-      return;
-    }
-
-    // Validate topics
-    const topicErrors = {};
-    formData.topics.forEach((topic, index) => {
-      if (!topic.title.trim()) {
-        topicErrors[`topic-${index}`] = 'Topic title is required';
-      }
-    });
-
-    if (Object.keys(topicErrors).length > 0) {
-      setErrors(prev => ({ ...prev, ...topicErrors }));
-      return;
-    }
-
-    // Log the form data to verify image is included
-    console.log('Submitting form with image:', formData.imageUrl ? 'Image present' : 'No image');
-    console.log('Image data:', formData.imageUrl ? formData.imageUrl.substring(0, 100) + '...' : 'No image data');
-    
-    onSubmit(formData);
-  };
-
-  const handleImageChange = async (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({
+          ...prev,
+          image: 'Please upload an image file'
+        }));
+        return;
+      }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, image: 'Please upload an image file' }));
-      return;
-    }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({
+          ...prev,
+          image: 'Image size should be less than 5MB'
+        }));
+        return;
+      }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, image: 'Image size should be less than 5MB' }));
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      setErrors(prev => ({ ...prev, image: null }));
-
-      // Create a preview and store the image
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result;
-        console.log('Image loaded successfully:', base64String.substring(0, 100) + '...');
-        setImagePreview(base64String);
+        setImagePreview(reader.result);
+        // Update form data with the base64 image
         setFormData(prev => ({
           ...prev,
-          imageUrl: base64String
+          imageUrl: reader.result
         }));
       };
       reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Error handling image:', error);
-      setErrors(prev => ({ ...prev, image: 'Failed to process image' }));
-    } finally {
-      setIsUploading(false);
+      setErrors(prev => ({ ...prev, image: null }));
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    setIsSubmitting(true);
+
+    try {
+      // Validate form data
+      const validationErrors = validateForm();
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+
+      // Log the form data being submitted
+      console.log('Submitting form data:', {
+        ...formData,
+        imageUrl: formData.imageUrl ? 'Image data present' : 'No image'
+      });
+
+      if (plan) {
+        await onSubmit(formData);
+      } else {
+        await onSubmit(formData);
+      }
+      onCancel();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setErrors(prev => ({
+        ...prev,
+        submit: error.message || 'Failed to save learning plan'
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const validateForm = () => {
+    // Implement form validation logic here
+    return {};
   };
 
   return (
@@ -350,7 +358,7 @@ const LearningPlanForm = ({ plan, onSubmit, onCancel }) => {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="submit-btn">
+          <button type="submit" className="submit-btn" disabled={isSubmitting}>
             {plan ? 'Update Plan' : 'Create Plan'}
           </button>
           <button type="button" className="cancel-btn" onClick={onCancel}>

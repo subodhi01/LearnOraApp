@@ -27,7 +27,7 @@ public class LearningPlanService {
             throw new IllegalArgumentException("Start date must be before end date");
         }
         
-        System.out.println("Creating plan with sharing status: " + plan.isShared());
+        System.out.println("Creating plan with image: " + (plan.getImageUrl() != null ? "Image present" : "No image"));
         plan.setUserEmail(userEmail);
         plan.setProgress(calculateProgress(plan));
         return learningPlanRepository.save(plan);
@@ -50,7 +50,7 @@ public class LearningPlanService {
         LearningPlanModel existingPlan = learningPlanRepository.findByIdAndUserEmail(updates.getId(), userEmail)
                 .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
 
-        System.out.println("Updating plan with sharing status: " + updates.isShared());
+        System.out.println("Updating plan with image: " + (updates.getImageUrl() != null ? "Image present" : "No image"));
 
         if (updates.getTitle() != null) {
             existingPlan.setTitle(updates.getTitle());
@@ -76,6 +76,9 @@ public class LearningPlanService {
         }
         if (updates.getStatus() != null) {
             existingPlan.setStatus(updates.getStatus());
+        }
+        if (updates.getImageUrl() != null) {
+            existingPlan.setImageUrl(updates.getImageUrl());
         }
         existingPlan.setShared(updates.isShared());
         existingPlan.setProgress(calculateProgress(existingPlan));
