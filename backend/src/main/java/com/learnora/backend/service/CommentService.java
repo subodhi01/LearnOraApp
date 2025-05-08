@@ -2,7 +2,6 @@ package com.learnora.backend.service;
 
 import com.learnora.backend.model.CommentModel;
 import com.learnora.backend.model.UserModel;
-import com.learnora.backend.model.NotificationModel;
 import com.learnora.backend.model.LearningPlanModel;
 import com.learnora.backend.repository.CommentRepository;
 import com.learnora.backend.repository.UserRepository;
@@ -36,7 +35,6 @@ public class CommentService {
         logger.info("Creating comment: postId={}, userId={}, username={}, parentId={}", 
             comment.getPostId(), comment.getUserId(), comment.getUsername(), comment.getParentId());
 
-        // Add debug logging for user ID
         logger.info("Raw user ID from comment: {}", comment.getUserId());
         logger.info("User ID type: {}", comment.getUserId() != null ? comment.getUserId().getClass().getName() : "null");
 
@@ -54,21 +52,17 @@ public class CommentService {
             throw new Exception("Comment text is required");
         }
 
-        // Set the creation timestamp
         comment.setCreatedAt(java.time.LocalDateTime.now());
 
-        // Verify user exists
         UserModel user = userRepository.findByEmail(comment.getUserId())
             .orElseThrow(() -> new Exception("User not found"));
         logger.info("Found user: email={}, name={}", user.getEmail(), user.getFirstName() + " " + user.getLastName());
 
-        // Ensure username matches user's name
         String expectedUsername = user.getFirstName() + " " + user.getLastName();
         if (!comment.getUsername().equals(expectedUsername)) {
             throw new Exception("Username does not match user");
         }
 
-        // If this is a reply, verify parent comment exists
         if (comment.getParentId() != null && !comment.getParentId().isEmpty()) {
             logger.info("This is a reply to comment: {}", comment.getParentId());
             Optional<CommentModel> parentComment = commentRepository.findById(comment.getParentId());
@@ -79,35 +73,30 @@ public class CommentService {
                 parentComment.get().getId(), parentComment.get().getUserId());
         }
 
-        // Save the comment first to get its ID
         CommentModel savedComment = commentRepository.save(comment);
         logger.info("Comment saved successfully: id={}", savedComment.getId());
 
-        // Get the learning plan to find the course owner
         LearningPlanModel plan = learningPlanRepository.findById(comment.getPostId())
             .orElseThrow(() -> new Exception("Learning plan not found"));
 
-        // Create notifications
         try {
-            // If this is a reply, notify the parent comment owner
             if (comment.getParentId() != null && !comment.getParentId().isEmpty()) {
                 Optional<CommentModel> parentComment = commentRepository.findById(comment.getParentId());
                 if (parentComment.isPresent() && !parentComment.get().getUserId().equals(comment.getUserId())) {
                     String message = String.format("%s replied to your comment", comment.getUsername());
                     logger.info("Creating notification for user {}: {}", parentComment.get().getUserId(), message);
                     
-                    NotificationModel notification = notificationService.createNotification(
+                    notificationService.createNotification(
                         parentComment.get().getUserId(),
                         "COMMENT_REPLY",
                         message,
                         savedComment.getId(),
                         comment.getPostId()
                     );
-                    logger.info("Reply notification created successfully: id={}", notification.getId());
+                    logger.info("Reply notification created successfully");
                 }
             }
 
-            // Notify the course owner if the comment is not from them
             if (!plan.getUserEmail().equals(comment.getUserId())) {
                 String message = String.format("%s commented on your course '%s': %s", 
                     comment.getUsername(),
@@ -116,18 +105,17 @@ public class CommentService {
                 
                 logger.info("Creating notification for course owner {}: {}", plan.getUserEmail(), message);
                 
-                NotificationModel notification = notificationService.createNotification(
+                notificationService.createNotification(
                     plan.getUserEmail(),
                     "COURSE_COMMENT",
                     message,
                     savedComment.getId(),
                     plan.getId()
                 );
-                logger.info("Course owner notification created successfully: id={}", notification.getId());
+                logger.info("Course owner notification created successfully");
             }
         } catch (Exception e) {
             logger.error("Failed to create notifications: {}", e.getMessage(), e);
-            // Don't throw the exception as the comment was already saved
         }
 
         return savedComment;
@@ -138,28 +126,23 @@ public class CommentService {
             throw new Exception("Post ID is required");
         }
 
-        // Get the learning plan to check if the user is the owner
         LearningPlanModel plan = learningPlanRepository.findById(postId)
             .orElseThrow(() -> new Exception("Learning plan not found"));
 
         boolean isCourseOwner = plan.getUserEmail().equals(userEmail);
 
-        // Get all comments for the post
         List<CommentModel> allComments = commentRepository.findByPostId(postId);
         
-        // Filter out hidden comments unless user is course owner
         if (!isCourseOwner) {
             allComments = allComments.stream()
                 .filter(comment -> !comment.isHidden())
                 .toList();
         }
         
-        // Filter out top-level comments (those without a parent)
         List<CommentModel> parentComments = allComments.stream()
             .filter(comment -> comment.getParentId() == null || comment.getParentId().isEmpty())
             .toList();
 
-        // Build the comment tree recursively
         for (CommentModel parent : parentComments) {
             buildCommentTree(parent, allComments);
         }
@@ -168,15 +151,12 @@ public class CommentService {
     }
 
     private void buildCommentTree(CommentModel comment, List<CommentModel> allComments) {
-        // Find all direct replies to this comment
         List<CommentModel> replies = allComments.stream()
             .filter(c -> comment.getId().equals(c.getParentId()))
             .toList();
         
-        // Set the replies
         comment.setReplies(replies);
         
-        // Recursively build the tree for each reply
         for (CommentModel reply : replies) {
             buildCommentTree(reply, allComments);
         }
@@ -194,7 +174,6 @@ public class CommentService {
             throw new Exception("Comment text is required");
         }
 
-        // Only allow updating the text
         comment.setText(updates.getText());
         return commentRepository.save(comment);
     }
@@ -203,16 +182,13 @@ public class CommentService {
         CommentModel comment = commentRepository.findById(id)
             .orElseThrow(() -> new Exception("Comment not found"));
 
-        // Get the learning plan to check if the user is the owner
         LearningPlanModel plan = learningPlanRepository.findById(comment.getPostId())
             .orElseThrow(() -> new Exception("Learning plan not found"));
 
-        // Allow deletion if user is either the comment owner or the course owner
         if (!comment.getUserId().equals(userId) && !plan.getUserEmail().equals(userId)) {
             throw new Exception("Unauthorized: Only the comment owner or course owner can delete it");
         }
 
-        // Delete all replies to this comment
         List<CommentModel> replies = commentRepository.findByPostId(comment.getPostId()).stream()
             .filter(c -> id.equals(c.getParentId()))
             .toList();
@@ -228,16 +204,13 @@ public class CommentService {
         CommentModel comment = commentRepository.findById(id)
             .orElseThrow(() -> new Exception("Comment not found"));
 
-        // Get the learning plan to check if the user is the owner
         LearningPlanModel plan = learningPlanRepository.findById(comment.getPostId())
             .orElseThrow(() -> new Exception("Learning plan not found"));
 
-        // Only course owner can hide/unhide comments
         if (!plan.getUserEmail().equals(userId)) {
             throw new Exception("Unauthorized: Only the course owner can hide/unhide comments");
         }
 
-        // Toggle the hidden status
         comment.setHidden(!comment.isHidden());
         commentRepository.save(comment);
     }

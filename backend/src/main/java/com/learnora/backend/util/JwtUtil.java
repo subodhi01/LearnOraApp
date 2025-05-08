@@ -40,12 +40,16 @@ public class JwtUtil {
 
     public Boolean validateToken(String token) {
         try {
-            logger.debug("Validating token: {}", token);
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            logger.debug("Token is valid");
-            return true;
+            logger.debug("Validating token...");
+            boolean isValid = !isTokenExpired(token);
+            if (isValid) {
+                logger.debug("Token is valid");
+            } else {
+                logger.debug("Token validation failed - token is expired");
+            }
+            return isValid;
         } catch (Exception e) {
-            logger.error("Token validation failed: {}", e.getMessage());
+            logger.error("Error validating token: {}", e.getMessage());
             return false;
         }
     }
@@ -62,7 +66,16 @@ public class JwtUtil {
         }
     }
 
-    private <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+    public Date getExpirationDateFromToken(String token) {
+        try {
+            return getClaimFromToken(token, Claims::getExpiration);
+        } catch (Exception e) {
+            logger.error("Error extracting expiration date from token: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = getAllClaimsFromToken(token);
         return claimsResolver.apply(claims);
     }
@@ -82,4 +95,18 @@ public class JwtUtil {
             throw e;
         }
     }
-} 
+
+    private Boolean isTokenExpired(String token) {
+        try {
+            final Date expiration = getExpirationDateFromToken(token);
+            boolean isExpired = expiration.before(new Date());
+            if (isExpired) {
+                logger.debug("Token is expired. Expiration date: {}", expiration);
+            }
+            return isExpired;
+        } catch (Exception e) {
+            logger.error("Error checking token expiration: {}", e.getMessage());
+            throw e;
+        }
+    }
+}

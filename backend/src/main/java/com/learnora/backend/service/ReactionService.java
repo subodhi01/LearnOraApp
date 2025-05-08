@@ -28,28 +28,23 @@ public class ReactionService {
         logger.info("Adding reaction: userId={}, contentId={}, contentType={}, reactionType={}, username={}", 
             userId, contentId, contentType, reactionType, username);
 
-        // Check if user already reacted
         ReactionModel existingReaction = reactionRepository.findByUserAndContent(userId, contentId, contentType)
             .orElse(null);
 
         if (existingReaction != null) {
             if (existingReaction.getReactionType().equals(reactionType)) {
-                // If same reaction type, remove it
                 reactionRepository.delete(existingReaction);
                 logger.info("Removed existing reaction of same type");
             } else {
-                // If different reaction type, update it
                 existingReaction.setReactionType(reactionType);
                 reactionRepository.save(existingReaction);
                 logger.info("Updated existing reaction to new type");
 
-                // Create notification for reaction change
                 try {
                     if (contentType.equals("COURSE")) {
                         var plan = learningPlanRepository.findById(contentId)
                             .orElseThrow(() -> new RuntimeException("Course not found"));
                         
-                        // Don't send notification if user is reacting to their own course
                         if (!plan.getUserEmail().equals(userId)) {
                             String message = String.format("%s changed their reaction to %s on your course '%s'", 
                                 username, 
@@ -68,22 +63,18 @@ public class ReactionService {
                     }
                 } catch (Exception e) {
                     logger.error("Failed to create notification for reaction change: {}", e.getMessage());
-                    // Don't throw the exception as the reaction was already updated
                 }
             }
         } else {
-            // Create new reaction
             ReactionModel newReaction = new ReactionModel(userId, contentId, contentType, reactionType);
             reactionRepository.save(newReaction);
             logger.info("Created new reaction");
 
-            // Create notification for new reaction
             try {
                 if (contentType.equals("COURSE")) {
                     var plan = learningPlanRepository.findById(contentId)
                         .orElseThrow(() -> new RuntimeException("Course not found"));
                     
-                    // Don't send notification if user is reacting to their own course
                     if (!plan.getUserEmail().equals(userId)) {
                         String message = String.format("%s %s your course '%s'", 
                             username, 
@@ -102,11 +93,9 @@ public class ReactionService {
                 }
             } catch (Exception e) {
                 logger.error("Failed to create notification for reaction: {}", e.getMessage());
-                // Don't throw the exception as the reaction was already saved
             }
         }
 
-        // Get updated counts
         return getReactionCounts(contentId, contentType);
     }
 
@@ -130,18 +119,15 @@ public class ReactionService {
         logger.info("Removing reaction: userId={}, contentId={}, contentType={}, username={}", 
             userId, contentId, contentType, username);
 
-        // Get the reaction before deleting it
         ReactionModel reaction = reactionRepository.findByUserAndContent(userId, contentId, contentType)
             .orElse(null);
 
         if (reaction != null) {
-            // Create notification for reaction removal
             try {
                 if (contentType.equals("COURSE")) {
                     var plan = learningPlanRepository.findById(contentId)
                         .orElseThrow(() -> new RuntimeException("Course not found"));
                     
-                    // Don't send notification if user is removing reaction from their own course
                     if (!plan.getUserEmail().equals(userId)) {
                         String message = String.format("%s removed their %s from your course '%s'", 
                             username, 
@@ -160,12 +146,10 @@ public class ReactionService {
                 }
             } catch (Exception e) {
                 logger.error("Failed to create notification for reaction removal: {}", e.getMessage());
-                // Don't throw the exception as we still want to remove the reaction
             }
 
-            // Delete the reaction
             reactionRepository.delete(reaction);
             logger.info("Reaction deleted successfully");
         }
     }
-} 
+}

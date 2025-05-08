@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LearningPlanService {
@@ -37,10 +38,7 @@ public class LearningPlanService {
             throw new IllegalArgumentException("User email is required");
         }
         List<LearningPlanModel> plans = learningPlanRepository.findByUserEmail(userEmail);
-        if (plans.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return plans;
+        return plans != null ? plans : Collections.emptyList();
     }
 
     public LearningPlanModel getPlanById(String planId) throws Exception {
@@ -64,6 +62,7 @@ public class LearningPlanService {
             if (updates.getEndDate() != null && updates.getStartDate().after(updates.getEndDate())) {
                 throw new IllegalArgumentException("Start date must be before end date");
             }
+            existingPlan.setStatus("In Progress");
             existingPlan.setStartDate(updates.getStartDate());
         }
         if (updates.getEndDate() != null) {
@@ -103,15 +102,35 @@ public class LearningPlanService {
     }
 
     public LearningPlanModel startLearningPlan(String userEmail, String planId) throws Exception {
-        LearningPlanModel plan = learningPlanRepository.findByIdAndUserEmail(planId, userEmail)
-                .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
-        
-        if (!"ACTIVE".equalsIgnoreCase(plan.getStatus())) {
-            plan.setStatus("ACTIVE");
-            plan.setProgress(calculateProgress(plan));
-            return learningPlanRepository.save(plan);
+        LearningPlanModel sharedPlan = learningPlanRepository.findById(planId)
+                .orElseThrow(() -> new Exception("Learning plan not found"));
+
+        if (!sharedPlan.isShared()) {
+            throw new Exception("This learning plan is not shared");
         }
-        return plan;
+
+        LearningPlanModel userPlan = new LearningPlanModel();
+        userPlan.setUserEmail(userEmail);
+        userPlan.setTitle(sharedPlan.getTitle());
+        userPlan.setDescription(sharedPlan.getDescription());
+        userPlan.setStartDate(new Date());
+        userPlan.setEndDate(sharedPlan.getEndDate());
+        userPlan.setStatus("In Progress");
+        userPlan.setShared(false);
+        
+        List<LearningPlanModel.Topic> userTopics = sharedPlan.getTopics().stream()
+                .map(topic -> {
+                    LearningPlanModel.Topic newTopic = new LearningPlanModel.Topic();
+                    newTopic.setTitle(topic.getTitle());
+                    newTopic.setResources(topic.getResources());
+                    newTopic.setCompleted(false);
+                    return newTopic;
+                })
+                .collect(Collectors.toList());
+        userPlan.setTopics(userTopics);
+        
+        userPlan.setProgress(0);
+        return learningPlanRepository.save(userPlan);
     }
 
     public LearningPlanModel updateTopicProgress(String userEmail, String planId, Integer topicIndex, Boolean completed) throws Exception {

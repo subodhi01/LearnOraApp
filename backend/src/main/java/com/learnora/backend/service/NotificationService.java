@@ -70,4 +70,4 @@ public class NotificationService {
         });
         logger.info("Marked {} notifications as read for user {}", unreadNotifications.size(), userId);
     }
-} 
+}
