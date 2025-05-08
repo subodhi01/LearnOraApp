@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Home from './components/Home/Home';
 import Signup from './components/Signup';
 import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
@@ -93,12 +94,7 @@ function App() {
               <Header />
               <main className="main-content">
                 <Routes>
-                  <Route path="/" element={
-                    <div className="welcome-section">
-                      <h1>Welcome to LearnOra</h1>
-                      <p>Your journey to knowledge starts here</p>
-                    </div>
-                  } />
+                  <Route path="/" element={<Home />} />
                   <Route path="/signup" element={
                     <PublicRoute>
                       <Signup />

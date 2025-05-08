@@ -39,6 +39,10 @@ const Header = () => {
         </div>
         
         <nav className="nav-links">
+          <Link to="/" className="nav-item">
+            <i className="fas fa-home"></i>
+            <span>Home</span>
+          </Link>
           <Link to="/courses" className="nav-item">
             <i className="fas fa-book"></i>
             <span>Courses</span>
