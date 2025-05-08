@@ -34,15 +34,27 @@ const Header = () => {
       <div className="header-container">
         <div className="logo">
           <Link to="/">
-            <h1>LearnOra</h1>
+            <h1><i className="fas fa-graduation-cap"></i> LearnOra</h1>
           </Link>
         </div>
         
         <nav className="nav-links">
-          <Link to="/courses">Courses</Link>
-          <Link to="/community">Community</Link>
-          <Link to="/learning-plans">Learning Plans</Link>
-          <Link to="/resources">Resources</Link>
+          <Link to="/courses" className="nav-item">
+            <i className="fas fa-book"></i>
+            <span>Courses</span>
+          </Link>
+          <Link to="/learning-plans" className="nav-item">
+            <i className="fas fa-tasks"></i>
+            <span>Learning Plans</span>
+          </Link>
+          <Link to="/resources" className="nav-item">
+            <i className="fas fa-bookmark"></i>
+            <span>Resources</span>
+          </Link>
+          <Link to="/community" className="nav-item">
+            <i className="fas fa-users"></i>
+            <span>Community</span>
+          </Link>
         </nav>
 
         <div className="auth-section">
@@ -66,6 +78,10 @@ const Header = () => {
                       <i className="fas fa-user"></i>
                       Dashboard
                     </Link>
+                    <Link to="/settings" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                      <i className="fas fa-cog"></i>
+                      Settings
+                    </Link>
                     <button onClick={() => {
                       setIsDropdownOpen(false);
                       handleLogout();
@@ -79,8 +95,14 @@ const Header = () => {
             </div>
           ) : (
             <div className="auth-buttons">
-              <Link to="/login" className="login-btn">Login</Link>
-              <Link to="/signup" className="signup-btn">Sign Up</Link>
+              <Link to="/login" className="login-btn">
+                <i className="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+              </Link>
+              <Link to="/signup" className="signup-btn">
+                <i className="fas fa-user-plus"></i>
+                <span>Sign Up</span>
+              </Link>
             </div>
           )}
         </div>
