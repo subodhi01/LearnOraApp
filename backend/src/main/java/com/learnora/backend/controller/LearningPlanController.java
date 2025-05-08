@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/learning-plan")
@@ -92,6 +93,45 @@ public class LearningPlanController {
         } catch (Exception e) {
             System.err.println("Error in getSharedPlans: " + e.getMessage());
             e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/start")
+    public ResponseEntity<?> startLearningPlan(@RequestBody Map<String, String> request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            String planId = request.get("planId");
+            
+            if (planId == null) {
+                return ResponseEntity.badRequest().body("Plan ID is required");
+            }
+
+            LearningPlanModel plan = learningPlanService.startLearningPlan(userEmail, planId);
+            return ResponseEntity.ok(plan);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/progress/topic")
+    public ResponseEntity<?> updateTopicProgress(@RequestBody Map<String, Object> request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            
+            String planId = (String) request.get("planId");
+            Integer topicIndex = (Integer) request.get("topicIndex");
+            Boolean completed = (Boolean) request.get("completed");
+            
+            if (planId == null || topicIndex == null || completed == null) {
+                return ResponseEntity.badRequest().body("Plan ID, topic index, and completion status are required");
+            }
+
+            LearningPlanModel updatedPlan = learningPlanService.updateTopicProgress(userEmail, planId, topicIndex, completed);
+            return ResponseEntity.ok(updatedPlan);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

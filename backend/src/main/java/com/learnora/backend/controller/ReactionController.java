@@ -14,7 +14,6 @@ public class ReactionController {
     @Autowired
     private ReactionService reactionService;
 
-    // Add a test endpoint
     @GetMapping("/test")
     public ResponseEntity<Map<String, String>> test() {
         Map<String, String> response = new HashMap<>();
@@ -56,4 +55,4 @@ public class ReactionController {
         reactionService.removeReaction(userId, contentId, contentType, username);
         return ResponseEntity.ok().build();
     }
-} 
+}

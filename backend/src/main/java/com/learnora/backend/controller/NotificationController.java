@@ -54,4 +54,4 @@ public class NotificationController {
         notificationService.markAllAsRead(userEmail);
         return ResponseEntity.ok().build();
     }
-} 
+}
