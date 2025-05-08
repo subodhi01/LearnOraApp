@@ -16,4 +16,4 @@ public interface ReactionRepository extends MongoRepository<ReactionModel, Strin
     long countByContentAndType(String contentId, String contentType, String reactionType);
     
     void deleteByUserIdAndContentIdAndContentType(String userId, String contentId, String contentType);
-} 
+}
