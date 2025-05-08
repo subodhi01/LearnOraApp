@@ -26,14 +26,6 @@ public class LearningPlanModel {
         this.topics = new ArrayList<>();
     }
 
-public Integer getProgress() {
-    return progress;
-}
-
-public void setProgress(Integer progress) {
-    this.progress = progress;
-}
-
     public LearningPlanModel(String userEmail, String title, String description, Date startDate, Date endDate, List<Topic> topics) {
         this.userEmail = userEmail;
         this.title = title;
@@ -129,12 +121,12 @@ public void setProgress(Integer progress) {
         this.endDate = endDate;
     }
 
-    public List<Topic> getTopics() {
-        return topics;
+    public Integer getProgress() {
+        return progress;
     }
 
-    public void setTopics(List<Topic> topics) {
-        this.topics = topics;
+    public void setProgress(Integer progress) {
+        this.progress = progress;
     }
 
     public String getStatus() {
@@ -151,5 +143,13 @@ public void setProgress(Integer progress) {
 
     public void setShared(boolean shared) {
         this.shared = shared;
+    }
+
+    public List<Topic> getTopics() {
+        return topics;
+    }
+
+    public void setTopics(List<Topic> topics) {
+        this.topics = topics;
     }
 }

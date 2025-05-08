@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -37,7 +38,7 @@ public class LearningPlanService {
         }
         List<LearningPlanModel> plans = learningPlanRepository.findByUserEmail(userEmail);
         if (plans.isEmpty()) {
-            throw new Exception("No learning plans found for user");
+            return Collections.emptyList();
         }
         return plans;
     }
@@ -48,12 +49,8 @@ public class LearningPlanService {
     }
 
     public LearningPlanModel updatePlan(String userEmail, LearningPlanModel updates) throws Exception {
-        LearningPlanModel existingPlan = learningPlanRepository.findById(updates.getId())
-                .orElseThrow(() -> new Exception("Learning plan not found"));
-
-        if (!existingPlan.getUserEmail().equals(userEmail)) {
-            throw new Exception("You don't have permission to update this plan");
-        }
+        LearningPlanModel existingPlan = learningPlanRepository.findByIdAndUserEmail(updates.getId(), userEmail)
+                .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
 
         System.out.println("Updating plan with sharing status: " + updates.isShared());
 
@@ -87,13 +84,8 @@ public class LearningPlanService {
     }
 
     public void deletePlan(String planId, String userEmail) throws Exception {
-        LearningPlanModel plan = learningPlanRepository.findById(planId)
-                .orElseThrow(() -> new Exception("Learning plan not found"));
-
-        if (!plan.getUserEmail().equals(userEmail)) {
-            throw new Exception("You don't have permission to delete this plan");
-        }
-
+        LearningPlanModel plan = learningPlanRepository.findByIdAndUserEmail(planId, userEmail)
+                .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
         learningPlanRepository.deleteById(planId);
     }
 
@@ -102,10 +94,7 @@ public class LearningPlanService {
         try {
             List<LearningPlanModel> sharedPlans = learningPlanRepository.findByShared(true);
             System.out.println("Service: Found " + (sharedPlans != null ? sharedPlans.size() : 0) + " shared plans");
-            if (sharedPlans == null) {
-                return Collections.emptyList();
-            }
-            return sharedPlans;
+            return sharedPlans != null ? sharedPlans : Collections.emptyList();
         } catch (Exception e) {
             System.err.println("Service error in getSharedPlans: " + e.getMessage());
             e.printStackTrace();
@@ -113,18 +102,42 @@ public class LearningPlanService {
         }
     }
 
-    // helper method to calculate progress
+    public LearningPlanModel startLearningPlan(String userEmail, String planId) throws Exception {
+        LearningPlanModel plan = learningPlanRepository.findByIdAndUserEmail(planId, userEmail)
+                .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
+        
+        if (!"ACTIVE".equalsIgnoreCase(plan.getStatus())) {
+            plan.setStatus("ACTIVE");
+            plan.setProgress(calculateProgress(plan));
+            return learningPlanRepository.save(plan);
+        }
+        return plan;
+    }
+
+    public LearningPlanModel updateTopicProgress(String userEmail, String planId, Integer topicIndex, Boolean completed) throws Exception {
+        LearningPlanModel plan = learningPlanRepository.findByIdAndUserEmail(planId, userEmail)
+                .orElseThrow(() -> new Exception("Learning plan not found or not owned by user"));
+        
+        List<LearningPlanModel.Topic> topics = plan.getTopics();
+        if (topicIndex < 0 || topicIndex >= topics.size()) {
+            throw new IllegalArgumentException("Invalid topic index");
+        }
+        
+        LearningPlanModel.Topic topic = topics.get(topicIndex);
+        topic.setCompleted(completed);
+        plan.setProgress(calculateProgress(plan));
+        return learningPlanRepository.save(plan);
+    }
+
     private Integer calculateProgress(LearningPlanModel plan) {
         if (plan.getTopics() == null || plan.getTopics().isEmpty()) {
             return 0;
         }
         
-        // Count completed topics
         long completed = plan.getTopics().stream()
                 .filter(LearningPlanModel.Topic::isCompleted)
                 .count();
         
-        // Calculate percentage and round to nearest integer
         double progress = (completed / (double) plan.getTopics().size()) * 100;
         return (int) Math.round(progress);
     }
