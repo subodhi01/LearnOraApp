@@ -15,13 +15,13 @@ export const getUserProfile = async () => {
       throw new Error('User email not found');
     }
 
-    console.log('Making profile request with headers:', getAuthHeaders()); // Debug log
+    console.log('Making profile request with headers:', getAuthHeaders());
 
     const response = await axios.get(`${API_URL}/auth/profile`, {
       params: { email: user.email },
       headers: getAuthHeaders()
     });
-    console.log('Profile response:', response.data); // Debug log
+    console.log('Profile response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching profile:', {
@@ -33,7 +33,7 @@ export const getUserProfile = async () => {
     if (error.response?.status === 403) {
       throw new Error('Authentication failed. Please log in again.');
     }
-    throw new Error(error.response?.data || 'Failed to fetch user profile');
+    throw new Error(error.response?.data?.message || 'Failed to fetch user profile');
   }
 };
 
@@ -49,22 +49,20 @@ export const updateUserProfile = async (profileData) => {
       throw new Error('User email not found');
     }
 
-    // Ensure phone number is included in the update
     const updateData = {
       firstName: profileData.firstName,
       lastName: profileData.lastName,
-      phone: profileData.phone || '' // Include phone number, default to empty string if not provided
+      phone: profileData.phone || ''
     };
 
-    console.log('Sending update data:', updateData); // Debug log
+    console.log('Sending update data:', updateData);
 
     const response = await axios.put(`${API_URL}/auth/profile`, updateData, {
       params: { email: user.email },
       headers: getAuthHeaders()
     });
-    console.log('Update response:', response.data); // Debug log
-    
-    // Update the user in localStorage with the new data
+    console.log('Update response:', response.data);
+
     const updatedUser = response.data;
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const updatedUserData = {
@@ -73,10 +71,10 @@ export const updateUserProfile = async (profileData) => {
       lastName: updatedUser.lastName,
       phone: updatedUser.phone || ''
     };
-    
+
     localStorage.setItem('user', JSON.stringify(updatedUserData));
-    console.log('Updated user data in localStorage:', updatedUserData); // Debug log
-    
+    console.log('Updated user data in localStorage:', updatedUserData);
+
     return updatedUser;
   } catch (error) {
     console.error('Error updating profile:', {
@@ -88,7 +86,7 @@ export const updateUserProfile = async (profileData) => {
     if (error.response?.status === 403) {
       throw new Error('Authentication failed. Please log in again.');
     }
-    throw new Error(error.response?.data || 'Failed to update profile');
+    throw new Error(error.response?.data?.message || 'Failed to update profile');
   }
 };
 
@@ -122,7 +120,7 @@ export const changePassword = async (passwordData) => {
     if (error.response?.status === 403) {
       throw new Error('Authentication failed. Please log in again.');
     }
-    throw new Error(error.response?.data || 'Failed to change password');
+    throw new Error(error.response?.data?.message || 'Failed to change password');
   }
 };
 
@@ -138,22 +136,21 @@ export const deleteUserProfile = async (password) => {
       throw new Error('User email not found');
     }
 
-    console.log('Making delete request with headers:', getAuthHeaders()); // Debug log
+    console.log('Making delete request with headers:', getAuthHeaders());
 
     const response = await axios.delete(`${API_URL}/auth/profile`, {
       params: { email: user.email },
-      data: { password }, // Include password in request body
+      data: { password },
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json'
       }
     });
-    
-    console.log('Delete response:', response.data); // Debug log
-    
-    // Clear user data from localStorage after successful deletion
+
+    console.log('Delete response:', response.data);
+
     localStorage.removeItem('user');
-    
+
     return response.data;
   } catch (error) {
     console.error('Error deleting profile:', {
@@ -165,6 +162,6 @@ export const deleteUserProfile = async (password) => {
     if (error.response?.status === 403) {
       throw new Error('Authentication failed. Please log in again.');
     }
-    throw new Error(error.response?.data || 'Failed to delete profile');
+    throw new Error(error.response?.data?.message || 'Failed to delete profile');
   }
 };

@@ -5,86 +5,51 @@ import { createComment, getCommentsByPostId, updateComment, deleteComment, toggl
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { reactionService } from '../../services/reactionService';
-import { createNotification } from '../../services/notificationService';
-import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 import ReactionSection from '../Reactions/ReactionSection';
 import CommentSection from '../Comments/CommentSection';
 
-const CommentInput = ({ initialValue = '', onSubmit, onCancel, placeholder }) => {
-  const [inputValue, setInputValue] = useState(initialValue);
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    // Focus the textarea when the component mounts
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
-
-  const handleSubmit = () => {
-    if (inputValue.trim()) {
-      onSubmit(inputValue);
-      setInputValue('');
-    }
-  };
-
-  const handleCancel = () => {
-    onCancel();
-    setInputValue('');
-  };
-
-  return (
-    <div className="comment-input-container">
-      <textarea
-        ref={textareaRef}
-        placeholder={placeholder}
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        className="comment-input"
-        rows={3}
-      />
-      <div className="comment-actions">
-        <button onClick={handleSubmit} className="submit-comment-button">
-          {initialValue ? 'Save' : 'Post Comment'}
-        </button>
-        {onCancel && (
-          <button onClick={handleCancel} className="cancel-button">
-            Cancel
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const Courses = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sharedPlans, setSharedPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userProgress, setUserProgress] = useState({});
   const [comments, setComments] = useState({});
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [editingComment, setEditingComment] = useState(null);
   const [errors, setErrors] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
-  const [targetCommentId, setTargetCommentId] = useState(null);
-  const [targetCourseId, setTargetCourseId] = useState(null);
-  const { user } = useAuth();
-  const commentRefs = useRef({});
   const [reactions, setReactions] = useState({});
   const [userReactions, setUserReactions] = useState({});
   const [reactionError, setReactionError] = useState(null);
+  const { user } = useAuth();
+  const commentRefs = useRef({});
 
-  // Get comment ID from URL if present
+  // Get comment ID and course ID from URL if present
   const searchParams = new URLSearchParams(location.search);
   const highlightCommentId = searchParams.get('commentId');
+  const highlightCourseId = searchParams.get('courseId');
 
-  // Load plans and comments
+  // Load plans, comments, user progress, and reactions
   useEffect(() => {
     const loadData = async () => {
       try {
         const plans = await learningPlanService.getSharedPlans();
         setSharedPlans(Array.isArray(plans) ? plans : []);
-        
+
+        // Load user progress for each plan
+        if (user?.email) {
+          const progressPromises = plans.map(plan =>
+            learningPlanService.getUserProgress(user.email, plan.id)
+          );
+          const progressResults = await Promise.all(progressPromises);
+          const progressMap = {};
+          progressResults.forEach((progress, index) => {
+            if (progress) {
+              progressMap[plans[index].id] = progress;
+            }
+          });
+          setUserProgress(progressMap);
+        }
+
         // Load comments for all plans
         for (const plan of plans) {
           try {
@@ -95,6 +60,26 @@ const Courses = () => {
             setComments(prev => ({ ...prev, [plan.id]: [] }));
           }
         }
+
+        // Load reactions
+        const reactionsData = {};
+        const userReactionsData = {};
+        for (const plan of plans) {
+          try {
+            const counts = await reactionService.getReactionCounts('COURSE', plan.id);
+            reactionsData[plan.id] = counts;
+            if (user) {
+              const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
+              userReactionsData[plan.id] = userReaction;
+            }
+          } catch (error) {
+            console.error('Error loading reactions for plan:', plan.id, error);
+            reactionsData[plan.id] = { likes: 0, dislikes: 0 };
+            userReactionsData[plan.id] = null;
+          }
+        }
+        setReactions(reactionsData);
+        setUserReactions(userReactionsData);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -103,24 +88,13 @@ const Courses = () => {
     };
 
     loadData();
-  }, []);
+  }, [user?.email]);
 
-  // Handle URL parameters for comment navigation
+  // Handle URL parameters for course and comment navigation
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const commentId = params.get('commentId');
-    const courseId = params.get('courseId');
-    
-    if (courseId && !loading && sharedPlans.length > 0) {
-      setTargetCourseId(courseId);
-      
-      if (commentId) {
-        setTargetCommentId(commentId);
-      }
-
-      // Wait for the component to render and then scroll to the target course
+    if (highlightCourseId && !loading && sharedPlans.length > 0) {
       const scrollToCourse = () => {
-        const courseElement = document.querySelector(`[data-course-id="${courseId}"]`);
+        const courseElement = document.querySelector(`[data-course-id="${highlightCourseId}"]`);
         if (courseElement) {
           const headerOffset = 80;
           const elementPosition = courseElement.getBoundingClientRect().top;
@@ -130,23 +104,104 @@ const Courses = () => {
             top: offsetPosition,
             behavior: 'smooth'
           });
-          
-          // Add highlight animation
+
           courseElement.classList.add('highlight-course');
-          
-          // Remove highlight after animation
           setTimeout(() => {
             courseElement.classList.remove('highlight-course');
           }, 2000);
         }
       };
 
-      // Try scrolling immediately and after a short delay to ensure the element is rendered
       scrollToCourse();
       setTimeout(scrollToCourse, 100);
-      setTimeout(scrollToCourse, 500); // Additional attempt after a longer delay
+      setTimeout(scrollToCourse, 500);
     }
-  }, [location.search, sharedPlans, loading]);
+  }, [highlightCourseId, sharedPlans, loading]);
+
+  const handleStartLearning = async (planId) => {
+    try {
+      if (!user?.email) {
+        setErrors(prev => ({ ...prev, [planId]: 'Please log in to start learning' }));
+        return;
+      }
+
+      const progress = await learningPlanService.startLearningPlan(user.email, planId);
+      setUserProgress(prev => ({
+        ...prev,
+        [planId]: progress
+      }));
+
+      setSharedPlans(prev => prev.map(plan =>
+        plan.id === planId
+          ? { ...plan, status: 'In Progress' }
+          : plan
+      ));
+    } catch (error) {
+      console.error('Error starting learning plan:', error);
+      setErrors(prev => ({
+        ...prev,
+        [planId]: error.message || 'Failed to start learning plan'
+      }));
+    }
+  };
+
+  const handleUpdateTopicProgress = async (planId, topicIndex, completed) => {
+    try {
+      if (!user?.email) {
+        setErrors(prev => ({ ...prev, [planId]: 'Please log in to update progress' }));
+        return;
+      }
+
+      setErrors(prev => ({ ...prev, [planId]: '' }));
+
+      const updatedProgress = await learningPlanService.updateTopicProgress(
+        user.email,
+        planId,
+        topicIndex,
+        completed
+      );
+
+      if (!updatedProgress) {
+        throw new Error('Failed to update progress. Please try again.');
+      }
+
+      setUserProgress(prev => ({
+        ...prev,
+        [planId]: updatedProgress
+      }));
+
+      setSharedPlans(prev => prev.map(plan =>
+        plan.id === planId
+          ? {
+              ...plan,
+              topics: plan.topics.map((topic, idx) =>
+                idx === topicIndex
+                  ? { ...topic, completed }
+                  : topic
+              )
+            }
+          : plan
+      ));
+    } catch (error) {
+      console.error('Error updating topic progress:', error);
+      setErrors(prev => ({
+        ...prev,
+        [planId]: error.message || 'Failed to update progress. Please try again.'
+      }));
+
+      setUserProgress(prev => ({
+        ...prev,
+        [planId]: {
+          ...prev[planId],
+          topics: prev[planId]?.topics.map((topic, idx) =>
+            idx === topicIndex
+              ? { ...topic, completed: !completed }
+              : topic
+          )
+        }
+      }));
+    }
+  };
 
   const handleCommentSubmit = async (planId, parentId = null, text) => {
     if (!user) {
@@ -167,17 +222,15 @@ const Courses = () => {
         text: text,
         parentId: parentId
       };
-      
+
       const savedComment = await createComment(commentData);
-      
-      // Refresh comments for this plan
+
       const updatedComments = await getCommentsByPostId(planId);
       setComments(prev => ({
         ...prev,
         [planId]: updatedComments
       }));
-      
-      // Clear any errors and reset reply state
+
       setErrors(prev => ({ ...prev, [`${planId}-${parentId || 'new'}`]: '' }));
     } catch (error) {
       console.error('Error creating comment:', error);
@@ -190,7 +243,7 @@ const Courses = () => {
 
     try {
       const updatedComment = await updateComment(commentId, { text: newText });
-      
+
       setComments(prev => ({
         ...prev,
         [planId]: prev[planId].map(comment => {
@@ -208,8 +261,6 @@ const Courses = () => {
           return comment;
         })
       }));
-
-      setEditingComment(null);
     } catch (error) {
       console.error('Error updating comment:', error);
       setErrors(prev => ({ ...prev, [commentId]: error.message || 'Failed to update comment' }));
@@ -233,18 +284,16 @@ const Courses = () => {
 
     try {
       await deleteComment(commentId, user.email);
-      
-      // Find the plan that contains this comment
+
       const planWithComment = sharedPlans.find(plan => {
         const planComments = comments[plan.id] || [];
-        return planComments.some(comment => 
-          comment.id === commentId || 
+        return planComments.some(comment =>
+          comment.id === commentId ||
           (comment.replies && comment.replies.some(reply => reply.id === commentId))
         );
       });
 
       if (planWithComment) {
-        // Remove the comment from the state
         setComments(prev => ({
           ...prev,
           [planWithComment.id]: prev[planWithComment.id].map(comment => {
@@ -272,8 +321,7 @@ const Courses = () => {
 
     try {
       await toggleCommentVisibility(commentId, user.email);
-      
-      // Update the comment in the state
+
       setComments(prev => ({
         ...prev,
         [planId]: prev[planId].map(comment => {
@@ -302,7 +350,7 @@ const Courses = () => {
       setReactionError(null);
       const currentReaction = userReactions[planId];
       const plan = sharedPlans.find(p => p.id === planId);
-      
+
       if (!plan) {
         throw new Error('Course not found');
       }
@@ -313,7 +361,6 @@ const Courses = () => {
       }
 
       if (currentReaction === reactionType) {
-        // Remove reaction if clicking the same button
         await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
         setUserReactions(prev => ({
           ...prev,
@@ -327,7 +374,6 @@ const Courses = () => {
           }
         }));
       } else {
-        // Add new reaction
         await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
         setUserReactions(prev => ({
           ...prev,
@@ -350,38 +396,6 @@ const Courses = () => {
       }
     }
   };
-
-  // Load reactions
-  useEffect(() => {
-    const loadReactions = async () => {
-      if (sharedPlans.length > 0) {
-        const reactionsData = {};
-        const userReactionsData = {};
-        
-        for (const plan of sharedPlans) {
-          try {
-            const counts = await reactionService.getReactionCounts('COURSE', plan.id);
-            reactionsData[plan.id] = counts;
-            
-            if (user) {
-              const userReaction = await reactionService.getUserReaction('COURSE', plan.id, user.email);
-              userReactionsData[plan.id] = userReaction;
-            }
-          } catch (error) {
-            console.error('Error loading reactions for plan:', plan.id, error);
-            setReactionError('Unable to load reactions. Please make sure the backend server is running.');
-            reactionsData[plan.id] = { likes: 0, dislikes: 0 };
-            userReactionsData[plan.id] = null;
-          }
-        }
-        
-        setReactions(reactionsData);
-        setUserReactions(userReactionsData);
-      }
-    };
-
-    loadReactions();
-  }, [sharedPlans, user]);
 
   const renderReactionError = () => {
     if (reactionError) {
@@ -407,8 +421,8 @@ const Courses = () => {
       ) : (
         <div className="courses-grid">
           {sharedPlans.map((plan) => (
-            <div 
-              key={plan.id} 
+            <div
+              key={plan.id}
               className="course-card"
               data-course-id={plan.id}
             >
@@ -418,7 +432,7 @@ const Courses = () => {
                   Created by: {plan.userEmail}
                 </span>
               </div>
-              
+
               <div className="course-content">
                 <p className="course-description">{plan.description}</p>
                 <div className="course-meta">
@@ -426,10 +440,10 @@ const Courses = () => {
                     {plan.topics?.length || 0} Topics
                   </span>
                   <span className="course-status">
-                    Status: {plan.status}
+                    Status: {userProgress[plan.id]?.status || plan.status}
                   </span>
                   <span className="course-progress">
-                    Progress: {calculateProgress(plan)}%
+                    Progress: {calculateProgress(userProgress[plan.id] || plan)}%
                   </span>
                 </div>
                 <div className="course-timeline">
@@ -437,7 +451,42 @@ const Courses = () => {
                   <span>End: {new Date(plan.endDate).toLocaleDateString()}</span>
                 </div>
 
-                {/* Reaction Section */}
+                {user ? (
+                  !userProgress[plan.id] ? (
+                    <button
+                      className="start-learning-btn"
+                      onClick={() => handleStartLearning(plan.id)}
+                    >
+                      Start Learning
+                    </button>
+                  ) : (
+                    <div className="topics-progress">
+                      <h4>Your Progress</h4>
+                      {plan.topics.map((topic, index) => (
+                        <div key={index} className="topic-progress-item">
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={userProgress[plan.id]?.topics[index]?.completed || false}
+                              onChange={(e) => handleUpdateTopicProgress(plan.id, index, e.target.checked)}
+                            />
+                            {topic.title}
+                          </label>
+                          <span className="topic-resources">{topic.resources}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <p className="login-prompt">
+                    Please <a href="/login">log in</a> to start learning.
+                  </p>
+                )}
+
+                {errors[plan.id] && (
+                  <div className="error-message">{errors[plan.id]}</div>
+                )}
+
                 <ReactionSection
                   contentId={plan.id}
                   contentType="COURSE"
@@ -447,7 +496,6 @@ const Courses = () => {
                   error={reactionError}
                 />
 
-                {/* Comments Section */}
                 <CommentSection
                   contentId={plan.id}
                   comments={comments[plan.id] || []}
@@ -475,4 +523,4 @@ const calculateProgress = (plan) => {
   return Math.round((completedTopics / plan.topics.length) * 100);
 };
 
-export default Courses; 
+export default Courses;

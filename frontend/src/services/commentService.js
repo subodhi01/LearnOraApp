@@ -3,12 +3,14 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8000/api/comments';
 
 // Get auth headers
-const getAuthHeaders = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (!user || !user.token) {
-    throw new Error('Authentication required. Please log in.');
+const getAuthToken = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user?.token;
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    return null;
   }
-  return { 'Authorization': `Bearer ${user.token}` };
 };
 
 // Create axios instance with default config
@@ -22,13 +24,13 @@ const api = axios.create({
 // Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    try {
-      const headers = getAuthHeaders();
-      config.headers = { ...config.headers, ...headers };
-      return config;
-    } catch (error) {
-      return Promise.reject(error);
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      throw new Error('Authentication required. Please log in.');
     }
+    return config;
   },
   (error) => {
     return Promise.reject(error);
@@ -92,10 +94,10 @@ export const updateComment = async (commentId, commentData) => {
   }
 };
 
-export const deleteComment = async (commentId, userEmail) => {
+export const deleteComment = async (commentId, userId) => {
   try {
     const response = await api.delete(`/${commentId}`, {
-      params: { userId: userEmail }
+      params: { userId }
     });
     return response.data;
   } catch (error) {
@@ -111,10 +113,10 @@ export const deleteComment = async (commentId, userEmail) => {
   }
 };
 
-export const toggleCommentVisibility = async (commentId, userEmail) => {
+export const toggleCommentVisibility = async (commentId, userId) => {
   try {
     const response = await api.post(`/${commentId}/toggle-visibility`, null, {
-      params: { userId: userEmail }
+      params: { userId }
     });
     return response.data;
   } catch (error) {

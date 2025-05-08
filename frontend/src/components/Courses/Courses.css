@@ -1,51 +1,59 @@
 .courses-container {
+  padding: 20px;
   max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 20px;
+  margin: 0 auto;
 }
 
 .courses-container h2 {
   font-size: 32px;
-  color: #333;
+  color: #2c3e50;
   margin-bottom: 30px;
+  font-weight: 600;
 }
 
 .courses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
 }
-s
+
 .course-card {
   background: white;
-  border-radius: 8psx;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  transition: transform 0.2s;
   transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.course-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #2196F3, #4CAF50);
 }
 
 .course-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .course-card.highlight-course {
-  animation: highlight-pulse 2s ease-in-out;
-  box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+  animation: highlight-course 2s ease-out;
 }
 
-@keyframes highlight-pulse {
+@keyframes highlight-course {
   0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(0, 123, 255, 0);
-  }
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+    background-color: rgba(255, 255, 0, 0.2);
   }
   100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(0, 123, 255, 0);
+    background-color: transparent;
   }
 }
 
@@ -59,37 +67,171 @@ s
 .course-header h3 {
   margin: 0;
   font-size: 20px;
-  color: #333;
+  color: #2c3e50;
+  font-weight: 600;
 }
 
 .course-creator {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #78909c;
+  background: #f8f9fa;
+  padding: 4px 12px;
+  border-radius: 20px;
 }
 
 .course-content {
-  color: #666;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .course-description {
-  margin: 15px 0;
-  line-height: 1.5;
+  color: #546e7a;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.6;
 }
 
 .course-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
-  color: #888;
-  margin: 15px 0;
+  font-size: 13px;
+  color: #78909c;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.course-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.course-progress {
+  color: #4CAF50;
+  font-weight: 500;
 }
 
 .course-timeline {
   display: flex;
   justify-content: space-between;
+  font-size: 13px;
+  color: #78909c;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.start-learning-btn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
   font-size: 14px;
-  color: #888;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
   margin-top: 15px;
+  box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+}
+
+.start-learning-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
+}
+
+.topics-progress {
+  margin-top: 15px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.topics-progress h4 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.topic-progress-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.topic-progress-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.topic-progress-item label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: #546e7a;
+  font-size: 14px;
+}
+
+.topic-progress-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid #2196F3;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topic-progress-item input[type="checkbox"]:checked {
+  background-color: #2196F3;
+  border-color: #2196F3;
+}
+
+.topic-resources {
+  font-size: 13px;
+  color: #78909c;
+  background: #f1f3f4;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.login-prompt {
+  text-align: center;
+  color: #78909c;
+  font-size: 14px;
+  margin-top: 15px;
+}
+
+.login-prompt a {
+  color: #2196F3;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-prompt a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 13px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #ffebee;
+  border-radius: 6px;
+  border: 1px solid #ffcdd2;
 }
 
 .loading {
@@ -106,286 +248,6 @@ s
   color: #666;
 }
 
-/* Comments Section Styles */
-.comments-section {
-  margin-top: 2rem;
-  border-top: 1px solid #e9ecef;
-  padding-top: 1.5rem;
-  transition: all 0.3s ease;
-}
-
-.comments-section h4 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #2c3e50;
-  font-weight: 600;
-}
-
-.comment-container {
-  margin-bottom: 1.5rem;
-  padding-left: 0;
-  transition: all 0.3s ease;
-}
-
-.comment-container.level-1 {
-  padding-left: 2.5rem;
-  border-left: 2px solid #e0e0e0;
-  margin-left: 0.5rem;
-}
-
-.comment-container.level-2 {
-  padding-left: 2.5rem;
-  border-left: 2px solid #f0f0f0;
-  margin-left: 0.5rem;
-}
-
-.comment {
-  background-color: #f8f9fa;
-  padding: 1.25rem;
-  border-radius: 12px;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.comment:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.comment-username {
-  font-weight: 600;
-  color: #2c3e50;
-  font-size: 1rem;
-}
-
-.comment-date {
-  color: #6c757d;
-  font-size: 0.875rem;
-}
-
-.comment-text {
-  margin: 0.75rem 0;
-  color: #2c3e50;
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
-
-.comment-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.reply-button,
-.edit-button,
-.delete-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.reply-button {
-  color: #007bff;
-}
-
-.reply-button:hover {
-  background-color: rgba(0, 123, 255, 0.1);
-}
-
-.edit-button {
-  color: #28a745;
-}
-
-.edit-button:hover {
-  background-color: rgba(40, 167, 69, 0.1);
-}
-
-.delete-button {
-  background: none;
-  border: none;
-  color: #dc3545;
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.delete-button:hover {
-  background-color: #dc3545;
-  color: white;
-}
-
-/* Style for course owner's delete button */
-.comment-actions .delete-button:not(:first-child) {
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-  opacity: 0.8;
-}
-
-.comment-actions .delete-button:not(:first-child):hover {
-  opacity: 1;
-}
-
-.reply-form {
-  margin-top: 1rem;
-  margin-left: 1rem;
-  padding: 1rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.replies-container {
-  margin-top: 1rem;
-}
-
-.comment-input-container {
-  margin-top: 1rem;
-}
-
-.comment-input {
-  width: 100%;
-  min-height: 100px;
-  padding: 1rem;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  resize: vertical;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  transition: all 0.3s ease;
-  background-color: #fff;
-}
-
-.comment-input:focus {
-  outline: none;
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.comment-input::placeholder {
-  color: #adb5bd;
-}
-
-.edit-actions,
-.comment-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.submit-comment-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.submit-comment-button:hover {
-  background-color: #0056b3;
-  transform: translateY(-1px);
-}
-
-.cancel-button {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.cancel-button:hover {
-  background-color: #5a6268;
-  transform: translateY(-1px);
-}
-
-.error-message {
-  color: #dc3545;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  display: block;
-  padding: 0.5rem;
-  background-color: rgba(220, 53, 69, 0.1);
-  border-radius: 4px;
-}
-
-.login-prompt {
-  text-align: center;
-  color: #6c757d;
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  font-size: 0.95rem;
-}
-
-.login-prompt a {
-  color: #007bff;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.login-prompt a:hover {
-  color: #0056b3;
-  text-decoration: underline;
-}
-
-/* Responsive Design for Comments */
-@media (max-width: 768px) {
-  .comment-container.level-1,
-  .comment-container.level-2 {
-    padding-left: 1.5rem;
-  }
-
-  .comment-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .comment-actions {
-    flex-wrap: wrap;
-  }
-
-  .reply-button,
-  .edit-button,
-  .delete-button {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.85rem;
-  }
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .courses-grid {
@@ -394,7 +256,7 @@ s
 
   .course-meta {
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
   }
 
   .course-timeline {
@@ -402,204 +264,3 @@ s
     gap: 5px;
   }
 }
-
-.comments-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.toggle-comments-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggle-comments-button:hover {
-  background-color: #e9ecef;
-  border-color: #ced4da;
-}
-
-.toggle-comments-button:active {
-  transform: translateY(1px);
-}
-
-.comment-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  padding: 0 0.5rem;
-  background-color: #007bff;
-  color: white;
-  border-radius: 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.comment.highlight-comment {
-  background-color: #fff3cd;
-  box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
-  animation: highlight-pulse 2s ease-out;
-}
-
-@keyframes highlight-pulse {
-  0% {
-    background-color: #fff3cd;
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
-  }
-  100% {
-    background-color: #f8f9fa;
-    box-shadow: none;
-  }
-}
-
-.hide-button {
-  background: none;
-  border: none;
-  color: #6c757d;
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.hide-button:hover {
-  background-color: #6c757d;
-  color: white;
-}
-
-/* Style for course owner's hide button */
-.comment-actions .hide-button {
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-  opacity: 0.8;
-}
-
-.comment-actions .hide-button:hover {
-  opacity: 1;
-}
-
-.hidden-comment {
-    opacity: 0.7;
-    background-color: #f8f9fa;
-    border-left: 3px solid #6c757d;
-}
-
-.hidden-badge {
-    background-color: #6c757d;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    margin-left: 8px;
-}
-
-.unhide-button {
-    background: none;
-    border: none;
-    color: #28a745;
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.unhide-button:hover {
-    background-color: #28a745;
-    color: white;
-}
-
-/* Style for course owner's unhide button */
-.comment-actions .unhide-button {
-    margin-left: 0.5rem;
-    font-size: 0.85rem;
-    opacity: 0.8;
-}
-
-.comment-actions .unhide-button:hover {
-    opacity: 1;
-}
-
-.reaction-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.reaction-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.reaction-button.like {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.reaction-button.like:hover {
-  background-color: #bbdefb;
-}
-
-.reaction-button.like.active {
-  background-color: #1976d2;
-  color: white;
-}
-
-.reaction-button.dislike {
-  background-color: #ffebee;
-  color: #d32f2f;
-}
-
-.reaction-button.dislike:hover {
-  background-color: #ffcdd2;
-}
-
-.reaction-button.dislike.active {
-  background-color: #d32f2f;
-  color: white;
-}
-
-.reaction-count {
-  font-weight: 600;
-  min-width: 1.5rem;
-  text-align: center;
-}
-
-@keyframes highlight-course {
-  0% {
-    background-color: rgba(255, 255, 0, 0.2);
-  }
-  100% {
-    background-color: transparent;
-  }
-}
-
-.highlight-course {
-  animation: highlight-course 2s ease-out;
-} 

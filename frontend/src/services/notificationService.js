@@ -1,15 +1,7 @@
 import axios from 'axios';
+import { getAuthHeaders } from './authService';
 
 const API_URL = 'http://localhost:8000/api/notifications';
-
-// Get auth headers
-const getAuthHeaders = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (!user || !user.token) {
-    throw new Error('Authentication required. Please log in.');
-  }
-  return { 'Authorization': `Bearer ${user.token}` };
-};
 
 // Create axios instance with default config
 const api = axios.create({
@@ -120,4 +112,4 @@ export const markAllAsRead = async () => {
     console.error('Error marking all notifications as read:', error.response?.data || error.message);
     throw new Error(error.response?.data?.message || 'Failed to mark all notifications as read');
   }
-}; 
+};
