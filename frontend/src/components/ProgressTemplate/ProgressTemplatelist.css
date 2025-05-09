@@ -1,0 +1,301 @@
+se.progress-template-list {
+  display: grid;
+  gap: 40px;
+  padding: 24px 0;
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.template-card-wrapper {
+  margin: 20px 0;
+  padding: 10px;
+}
+
+.progress-template-card {
+    margin-top: 10px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  margin: 0 16px;
+}
+
+.progress-template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.template-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #1368ae 0%, #fafafa 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.template-header h4 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.template-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.template-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.template-actions button:first-child {
+  background-color: #10b981;
+  color: white;
+}
+
+.template-actions button:last-child {
+  background-color: #ef4444;
+  color: white;
+}
+
+.template-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.template-content {
+  padding: 20px;
+}
+
+.template-section {
+  margin-bottom: 24px;
+}
+
+.template-section:last-child {
+  margin-bottom: 0;
+}
+
+.template-section h5 {
+  color: #1e293b;
+  font-size: 1.1rem;
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+.progress-items {
+  display: grid;
+  gap: 12px;
+}
+
+.progress-item {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.progress-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-item-header span:first-child {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.percentage-label {
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ed0202 10%,#ffffff 0%, #ffffff 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  right: 0;
+  top: -20px;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.template-footer {
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-progress {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.template-date {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.progress-template-empty {
+  text-align: center;
+  padding: 40px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.progress-template-empty p {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Custom scrollbar for the list */
+.progress-template-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.progress-template-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.progress-template-list::-webkit-scrollbar-thumb {
+  background: #bfdbfe;
+  border-radius: 4px;
+}
+
+.progress-template-list::-webkit-scrollbar-thumb:hover {
+  background: #93c5fd;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .progress-template-list {
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .template-header {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .template-actions {
+    width: 100%;
+  }
+
+  .template-actions button {
+    flex: 1;
+  }
+
+  .template-content {
+    padding: 16px;
+  }
+
+  .template-footer {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+/* Animation for progress bars */
+@keyframes progressFill {
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--progress);
+  }
+}
+
+.progress-fill {
+  animation: progressFill 1s ease-out forwards;
+}
+
+/* Hover effects for interactive elements */
+.progress-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.template-actions button:first-child:hover {
+  background-color: #059669;
+}
+
+.template-actions button:last-child:hover {
+  background-color: #dc2626;
+}
+
+/* Create New Plan Button Styles */
+.create-plan-button {
+  background: linear-gradient(135deg, #2563eb 0%, #555a68 100%);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.create-plan-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.create-plan-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.create-plan-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive styles for create button */
+@media (max-width: 768px) {
+  .create-plan-button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 20px;
+  }
+} 
