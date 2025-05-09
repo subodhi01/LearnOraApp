@@ -18,6 +18,7 @@ public class ProgressTemplate {
     private Date createdAt;
     private Date updatedAt;
     private boolean isActive;
+    private String calculationMethod; // 'byTopics' or 'byTargets'
 
     // Nested class for topic progress
     public static class TopicProgress {
@@ -43,6 +44,8 @@ public class ProgressTemplate {
         private String name;
         private double percentage;
         private double currentProgress;
+        private String topicId;
+        private Date finishDate;
 
         // Getters and Setters
         public String getId() { return id; }
@@ -53,6 +56,10 @@ public class ProgressTemplate {
         public void setPercentage(double percentage) { this.percentage = percentage; }
         public double getCurrentProgress() { return currentProgress; }
         public void setCurrentProgress(double currentProgress) { this.currentProgress = currentProgress; }
+        public String getTopicId() { return topicId; }
+        public void setTopicId(String topicId) { this.topicId = topicId; }
+        public Date getFinishDate() { return finishDate; }
+        public void setFinishDate(Date finishDate) { this.finishDate = finishDate; }
     }
 
     // Getters and Setters
@@ -76,4 +83,6 @@ public class ProgressTemplate {
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+    public String getCalculationMethod() { return calculationMethod; }
+    public void setCalculationMethod(String calculationMethod) { this.calculationMethod = calculationMethod; }
 } 

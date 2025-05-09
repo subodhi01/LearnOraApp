@@ -19,9 +19,10 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
   const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
   const { user } = useAuth();
   const [selectedTopic, setSelectedTopic] = useState(null);
-  const [calculationMethod, setCalculationMethod] = useState('byTopics'); // 'byTopics' or 'byTargets'
+  const [calculationMethod, setCalculationMethod] = useState(template?.calculationMethod || 'byTopics');
   const [topicPercentages, setTopicPercentages] = useState({});
   const [targetPercentages, setTargetPercentages] = useState({});
+  const [showCalculationMethod, setShowCalculationMethod] = useState(false);
 
   useEffect(() => {
     console.log('Current user data:', user); // Debug log
@@ -34,6 +35,14 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       handleCourseSelect(template.learningPlanId);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setShowCalculationMethod(true);
+    } else {
+      setShowCalculationMethod(false);
+    }
+  }, [selectedCourse]);
 
   const fetchCourses = async () => {
     try {
@@ -198,8 +207,9 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     if (!selectedCourse) return;
 
     const templateData = {
-      userId: user.email, // Use email as userId
+      userId: user.email,
       learningPlanId: selectedCourse,
+      calculationMethod: calculationMethod,
       topics: topics.map(topic => ({
         topicId: topic.title,
         topicName: topic.title,
@@ -208,7 +218,8 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       customItems: customItems.map(item => ({
         name: item.name,
         currentProgress: item.currentProgress || 0,
-        finishDate: item.finishDate
+        finishDate: item.finishDate,
+        topicId: item.topicId
       }))
     };
 
@@ -278,6 +289,29 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
         </select>
       </div>
 
+      {showCalculationMethod && (
+        <div className="form-group">
+          <label>Percentage Calculation Method</label>
+          <div className="calculation-method-selector">
+            <select 
+              value={calculationMethod} 
+              onChange={(e) => setCalculationMethod(e.target.value)}
+              className="calculation-select"
+            >
+              <option value="byTopics">Calculate by Topics First</option>
+              <option value="byTargets">Calculate by Total Targets</option>
+            </select>
+            <div className="calculation-info">
+              {calculationMethod === 'byTopics' ? (
+                <p>Each topic gets equal percentage, divided among its targets</p>
+              ) : (
+                <p>All targets get equal percentage, topics calculated based on their targets</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedCourseDetails && (
         <div className="course-details-summary">
           <h4>Course Details</h4>
@@ -295,131 +329,22 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       {selectedCourse && (
         <>
           <div className="form-group">
-            <label>Percentage Calculation Method</label>
-            <div className="calculation-method-selector">
-              <div className="calculation-placeholder">
-                Select calculation method
-              </div>
-              <select 
-                value={calculationMethod} 
-                onChange={(e) => setCalculationMethod(e.target.value)}
-                className="calculation-select"
-              >
-                <option value="byTopics">Calculate by Topics First</option>
-                <option value="byTargets">Calculate by Total Targets</option>
-              </select>
-              <div className="calculation-info">
-                {calculationMethod ? (
-                  calculationMethod === 'byTopics' ? (
-                    <p>Each topic gets equal percentage, divided among its targets</p>
-                  ) : (
-                    <p>All targets get equal percentage, topics calculated based on their targets</p>
-                  )
-                ) : (
-                  <p>Please select a calculation method to see the explanation</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Course Topics</label>
+            <label>Course Topics and Learning Targets</label>
             <div className="progress-template-topics">
               {topics.map((topic, index) => (
                 <div key={`${topic.title}-${index}`} className="progress-template-topic">
                   <div className="topic-info">
-                    <span>{topic.title}</span>
+                    <h4>{topic.title}</h4>
                     <span className="topic-percentage">
                       {topicPercentages[topic.title]?.toFixed(1)}%
                     </span>
-                    {topics.filter(t => t.title.toLowerCase() === topic.title.toLowerCase()).length > 1 && (
-                      <span className="duplicate-warning">(Duplicate)</span>
-                    )}
                   </div>
-                  <div className="topic-actions">
-                    {template && (
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={template.topics.find(t => t.topicId === topic.title)?.currentProgress || 0}
-                        onChange={(e) => {
-                          const newTopics = topics.map(t => 
-                            t.title === topic.title 
-                              ? { ...t, currentProgress: parseInt(e.target.value) || 0 }
-                              : t
-                          );
-                          setTopics(newTopics);
-                        }}
-                      />
-                    )}
-                    <button 
-                      type="button" 
-                      className={`select-topic-btn ${selectedTopic?.title === topic.title ? 'selected' : ''}`}
-                      onClick={() => setSelectedTopic(topic)}
-                    >
-                      {selectedTopic?.title === topic.title ? 'Selected' : 'Select for Targets'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Custom Learning Targets</label>
-            {selectedTopic ? (
-              <div className="selected-topic-info">
-                <p>Adding targets for topic: <strong>{selectedTopic.title}</strong></p>
-              </div>
-            ) : (
-              <p className="select-topic-message">Select a topic above to add custom learning targets</p>
-            )}
-            <div className="progress-template-custom-items">
-              <div className="custom-item-input">
-                <input
-                  type="text"
-                  value={newCustomItem}
-                  onChange={(e) => setNewCustomItem(e.target.value)}
-                  placeholder="Add custom target"
-                  disabled={!selectedTopic}
-                />
-                <input
-                  type="date"
-                  value={newCustomItemDate}
-                  onChange={(e) => setNewCustomItemDate(e.target.value)}
-                  min={selectedCourseDetails?.startDate?.split('T')[0]}
-                  max={selectedCourseDetails?.endDate?.split('T')[0]}
-                  disabled={!selectedTopic}
-                />
-                <button 
-                  type="button" 
-                  onClick={addCustomItem}
-                  disabled={!selectedTopic}
-                >
-                  Add
-                </button>
-              </div>
-              {customItemError && (
-                <div className="error-message">{customItemError}</div>
-              )}
-
-              {topics.map(topic => {
-                const topicItems = customItems.filter(item => item.topicId === topic.title);
-                if (topicItems.length === 0) return null;
-
-                return (
-                  <div key={topic.title} className="topic-custom-items">
-                    <div className="topic-custom-header">
-                      <h4>{topic.title}</h4>
-                      <div className="topic-stats">
-                        <span className="item-count">{topicItems.length} target{topicItems.length !== 1 ? 's' : ''}</span>
-                        <span className="topic-percentage">{topicPercentages[topic.title]?.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                    <div className="topic-custom-list">
-                      {topicItems.map((item, index) => (
-                        <div key={index} className="progress-template-custom-item">
+                  
+                  <div className="topic-custom-items">
+                    {customItems
+                      .filter(item => item.topicId === topic.title)
+                      .map((item, itemIndex) => (
+                        <div key={itemIndex} className="progress-template-custom-item">
                           <div className="custom-item-info">
                             <div className="custom-item-header">
                               <span>{item.name}</span>
@@ -440,7 +365,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                                 value={item.currentProgress || 0}
                                 onChange={(e) => {
                                   const newItems = customItems.map((i, idx) => 
-                                    idx === index 
+                                    idx === itemIndex 
                                       ? { ...i, currentProgress: parseInt(e.target.value) || 0 }
                                       : i
                                   );
@@ -448,18 +373,54 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
                                 }}
                               />
                             )}
-                            <button type="button" onClick={() => removeCustomItem(index)}>
+                            <button type="button" onClick={() => removeCustomItem(itemIndex)}>
                               Remove
                             </button>
                           </div>
                         </div>
                       ))}
-                    </div>
                   </div>
-                );
-              })}
+
+                  <div className="topic-actions">
+                    <button 
+                      type="button" 
+                      className={`select-topic-btn ${selectedTopic?.title === topic.title ? 'selected' : ''}`}
+                      onClick={() => setSelectedTopic(topic)}
+                    >
+                      {selectedTopic?.title === topic.title ? 'Selected' : 'Add Learning Target'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+
+          {selectedTopic && (
+            <div className="form-group">
+              <label>Add Learning Target for {selectedTopic.title}</label>
+              <div className="custom-item-input">
+                <input
+                  type="text"
+                  value={newCustomItem}
+                  onChange={(e) => setNewCustomItem(e.target.value)}
+                  placeholder="Add learning target"
+                />
+                <input
+                  type="date"
+                  value={newCustomItemDate}
+                  onChange={(e) => setNewCustomItemDate(e.target.value)}
+                  min={selectedCourseDetails?.startDate?.split('T')[0]}
+                  max={selectedCourseDetails?.endDate?.split('T')[0]}
+                />
+                <button type="button" onClick={addCustomItem}>
+                  Add
+                </button>
+              </div>
+              {customItemError && (
+                <div className="error-message">{customItemError}</div>
+              )}
+            </div>
+          )}
         </>
       )}
 

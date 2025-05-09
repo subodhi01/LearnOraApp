@@ -27,12 +27,12 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
             <div className="template-content">
               {template.topics && template.topics.length > 0 && (
                 <div className="template-section">
-                  <h5>Course Topics</h5>
+                  <h5>Course Progress</h5>
                   <div className="progress-items">
                     {template.topics.map((topic) => (
                       <div key={topic.topicId} className="progress-item">
                         <div className="progress-item-header">
-                          <span>{topic.topicName}</span>
+                          <h6>{topic.topicName}</h6>
                           <span className="percentage-label">
                             {topic.percentage?.toFixed(1)}%
                           </span>
@@ -44,31 +44,30 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
                           />
                           <span className="progress-text">{topic.currentProgress}%</span>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {template.customItems && template.customItems.length > 0 && (
-                <div className="template-section">
-                  <h5>Custom Learning Targets</h5>
-                  <div className="progress-items">
-                    {template.customItems.map((item, index) => (
-                      <div key={index} className="progress-item">
-                        <div className="progress-item-header">
-                          <span>{item.name}</span>
-                          <span className="percentage-label">
-                            {item.percentage?.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{ width: `${item.currentProgress}%` }}
-                          />
-                          <span className="progress-text">{item.currentProgress}%</span>
-                        </div>
+                        {/* Learning Targets under this topic */}
+                        {template.customItems && template.customItems
+                          .filter(item => item.topicId === topic.topicId)
+                          .map((item, index) => (
+                            <div key={index} className="learning-target-item">
+                              <div className="target-header">
+                                <span>{item.name}</span>
+                                <span className="percentage-label">
+                                  {item.percentage?.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="progress-bar">
+                                <div
+                                  className="progress-fill"
+                                  style={{ width: `${item.currentProgress}%` }}
+                                />
+                                <span className="progress-text">{item.currentProgress}%</span>
+                              </div>
+                              <div className="target-date">
+                                Finish by: {new Date(item.finishDate).toLocaleDateString()}
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     ))}
                   </div>

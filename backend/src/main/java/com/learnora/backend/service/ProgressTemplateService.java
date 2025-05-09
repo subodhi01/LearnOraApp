@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.stream.Collectors;
 
 @Service
 public class ProgressTemplateService {
@@ -55,17 +56,51 @@ public class ProgressTemplateService {
     }
 
     private void calculatePercentages(ProgressTemplate template) {
-        int totalItems = template.getTopics().size() + template.getCustomItems().size();
-        double basePercentage = 100.0 / totalItems;
-
-        // Set percentages for topics
-        for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
-            topic.setPercentage(basePercentage);
-        }
-
-        // Set percentages for custom items
-        for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
-            item.setPercentage(basePercentage);
+        String calculationMethod = template.getCalculationMethod();
+        
+        if ("byTopics".equals(calculationMethod)) {
+            // Calculate by topics first
+            int topicCount = template.getTopics().size();
+            double baseTopicPercentage = 100.0 / topicCount;
+            
+            // Set percentages for topics
+            for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
+                topic.setPercentage(baseTopicPercentage);
+                
+                // Calculate percentages for custom items under this topic
+                List<ProgressTemplate.CustomItem> topicItems = template.getCustomItems().stream()
+                    .filter(item -> item.getTopicId() != null && 
+                           topic.getTopicId() != null && 
+                           item.getTopicId().equals(topic.getTopicId()))
+                    .collect(Collectors.toList());
+                
+                if (!topicItems.isEmpty()) {
+                    double itemPercentage = baseTopicPercentage / topicItems.size();
+                    for (ProgressTemplate.CustomItem item : topicItems) {
+                        item.setPercentage(itemPercentage);
+                    }
+                }
+            }
+        } else {
+            // Calculate by total targets
+            int totalTargets = template.getCustomItems().size();
+            double baseTargetPercentage = 100.0 / totalTargets;
+            
+            // Set percentages for all custom items
+            for (ProgressTemplate.CustomItem item : template.getCustomItems()) {
+                item.setPercentage(baseTargetPercentage);
+            }
+            
+            // Calculate topic percentages based on their targets
+            for (ProgressTemplate.TopicProgress topic : template.getTopics()) {
+                double topicPercentage = template.getCustomItems().stream()
+                    .filter(item -> item.getTopicId() != null && 
+                           topic.getTopicId() != null && 
+                           item.getTopicId().equals(topic.getTopicId()))
+                    .mapToDouble(ProgressTemplate.CustomItem::getPercentage)
+                    .sum();
+                topic.setPercentage(topicPercentage);
+            }
         }
 
         // Calculate total progress
