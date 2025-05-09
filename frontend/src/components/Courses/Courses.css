@@ -275,8 +275,21 @@
 .no-courses {
   text-align: center;
   padding: 40px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.no-courses p {
+  margin: 0;
+  color: #546e7a;
   font-size: 18px;
-  color: #666;
+}
+
+.no-courses .sub-text {
+  margin-top: 10px;
+  color: #78909c;
+  font-size: 14px;
 }
 
 .course-stats {

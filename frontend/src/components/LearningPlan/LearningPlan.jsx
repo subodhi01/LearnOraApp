@@ -31,7 +31,7 @@ const LearningPlan = () => {
       setPlans(plansData);
     } catch (error) {
       console.error('Error fetching learning plans:', error);
-      if (error.status === 401) {
+      if (error.status === 401 || error.message?.includes('Unauthorized')) {
         // Redirect to login if unauthorized
         navigate('/login');
       } else {

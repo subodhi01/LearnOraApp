@@ -417,7 +417,10 @@ const Courses = () => {
       {renderReactionError()}
       <h2>Available Courses</h2>
       {sharedPlans.length === 0 ? (
-        <p className="no-courses">No shared courses available yet.</p>
+        <div className="no-courses">
+          <p>No shared courses available yet.</p>
+          <p className="sub-text">Courses will appear here when they are shared with you or when you share your own courses.</p>
+        </div>
       ) : (
         <div className="courses-grid">
           {sharedPlans.map((plan) => (
@@ -438,7 +441,7 @@ const Courses = () => {
               <div className="course-header">
                 <h3>{plan.title}</h3>
                 <span className="course-creator">
-                  Created by: {plan.userEmail}
+                  Created by: {plan.userEmail === user?.email ? 'You' : plan.userEmail}
                 </span>
               </div>
 

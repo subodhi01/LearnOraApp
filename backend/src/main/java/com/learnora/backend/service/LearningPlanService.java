@@ -3,6 +3,8 @@ package com.learnora.backend.service;
 import com.learnora.backend.model.LearningPlanModel;
 import com.learnora.backend.repository.LearningPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -37,6 +39,16 @@ public class LearningPlanService {
         if (userEmail == null || userEmail.isEmpty()) {
             throw new IllegalArgumentException("User email is required");
         }
+        
+        // Get the current user's email from the security context
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = auth.getName();
+        
+        // Only return plans if the requesting user is the owner
+        if (!currentUserEmail.equals(userEmail)) {
+            throw new Exception("Unauthorized access to learning plans");
+        }
+        
         List<LearningPlanModel> plans = learningPlanRepository.findByUserEmail(userEmail);
         return plans != null ? plans : Collections.emptyList();
     }
@@ -94,9 +106,23 @@ public class LearningPlanService {
     public List<LearningPlanModel> getSharedPlans() throws Exception {
         System.out.println("Service: Getting shared plans");
         try {
-            List<LearningPlanModel> sharedPlans = learningPlanRepository.findByShared(true);
-            System.out.println("Service: Found " + (sharedPlans != null ? sharedPlans.size() : 0) + " shared plans");
-            return sharedPlans != null ? sharedPlans : Collections.emptyList();
+            // Get the current user's email from the security context
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String currentUserEmail = auth.getName();
+            
+            // Get all shared plans
+            List<LearningPlanModel> allSharedPlans = learningPlanRepository.findByShared(true);
+            
+            // Filter plans to only include those created by the current user or shared with them
+            List<LearningPlanModel> filteredPlans = allSharedPlans.stream()
+                .filter(plan -> 
+                    plan.getUserEmail().equals(currentUserEmail) || // Plan created by current user
+                    (plan.getEnrolledUsers() != null && plan.getEnrolledUsers().contains(currentUserEmail)) // Plan shared with current user
+                )
+                .collect(Collectors.toList());
+            
+            System.out.println("Service: Found " + filteredPlans.size() + " shared plans for user " + currentUserEmail);
+            return filteredPlans;
         } catch (Exception e) {
             System.err.println("Service error in getSharedPlans: " + e.getMessage());
             e.printStackTrace();
