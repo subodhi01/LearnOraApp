@@ -25,6 +25,7 @@ public class LearningPlanModel {
     @Field("imageUrl")
     private String imageUrl;
     private Date createdAt;
+    @Field("enrolledUsers")
     private List<String> enrolledUsers;
 
     public LearningPlanModel() {
@@ -180,10 +181,10 @@ public class LearningPlanModel {
     }
 
     public List<String> getEnrolledUsers() {
-        return enrolledUsers;
+        return enrolledUsers != null ? enrolledUsers : new ArrayList<>();
     }
 
     public void setEnrolledUsers(List<String> enrolledUsers) {
-        this.enrolledUsers = enrolledUsers;
+        this.enrolledUsers = enrolledUsers != null ? enrolledUsers : new ArrayList<>();
     }
 }

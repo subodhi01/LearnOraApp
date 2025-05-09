@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import './Course.css';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const CourseCard = ({ course, onEdit, onDelete, onView }) => {
   const [imageError, setImageError] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   const handleImageError = (e) => {
     setImageError(true);
@@ -11,6 +15,17 @@ const CourseCard = ({ course, onEdit, onDelete, onView }) => {
 
   // Log the course data for debugging
   console.log('Course data:', course);
+
+  const handleStartLearning = async () => {
+    try {
+      await onView(course);
+      navigate('/learning-plan');
+    } catch (error) {
+      console.error('Error starting learning:', error);
+    }
+  };
+
+  const enrolledUsersCount = course.enrolledUsers ? course.enrolledUsers.length : 0;
 
   return (
     <div className="course-card">
@@ -48,7 +63,7 @@ const CourseCard = ({ course, onEdit, onDelete, onView }) => {
           </div>
           <div className="stat">
             <span className="stat-label">Students:</span>
-            <span className="stat-value">{course.studentsCount}</span>
+            <span className="stat-value">{enrolledUsersCount}</span>
           </div>
           <div className="stat">
             <span className="stat-label">Modules:</span>
@@ -69,7 +84,7 @@ const CourseCard = ({ course, onEdit, onDelete, onView }) => {
         </div>
 
         <div className="course-actions-bottom">
-          <button onClick={() => onView(course)} className="view-course-btn">
+          <button onClick={handleStartLearning} className="view-course-btn">
             View Course
           </button>
           <button className="start-learning-btn">
