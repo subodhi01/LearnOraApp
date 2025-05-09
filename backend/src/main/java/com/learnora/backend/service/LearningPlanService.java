@@ -5,6 +5,7 @@ import com.learnora.backend.repository.LearningPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -95,6 +96,12 @@ public class LearningPlanService {
         System.out.println("Service: Getting shared plans");
         try {
             List<LearningPlanModel> sharedPlans = learningPlanRepository.findByShared(true);
+            // Ensure each plan has an enrolledUsers list
+            sharedPlans.forEach(plan -> {
+                if (plan.getEnrolledUsers() == null) {
+                    plan.setEnrolledUsers(new ArrayList<>());
+                }
+            });
             System.out.println("Service: Found " + (sharedPlans != null ? sharedPlans.size() : 0) + " shared plans");
             return sharedPlans != null ? sharedPlans : Collections.emptyList();
         } catch (Exception e) {
@@ -112,6 +119,16 @@ public class LearningPlanService {
             throw new Exception("This learning plan is not shared");
         }
 
+        // Check if user already has a copy of this plan
+        List<LearningPlanModel> existingUserPlans = learningPlanRepository.findByUserEmail(userEmail);
+        for (LearningPlanModel existingPlan : existingUserPlans) {
+            if (existingPlan.getTitle().equals(sharedPlan.getTitle()) && 
+                existingPlan.getUserEmail().equals(userEmail)) {
+                return existingPlan; // Return existing plan if user already has it
+            }
+        }
+
+        // Create a new plan for the user
         LearningPlanModel userPlan = new LearningPlanModel();
         userPlan.setUserEmail(userEmail);
         userPlan.setTitle(sharedPlan.getTitle());
@@ -120,6 +137,7 @@ public class LearningPlanService {
         userPlan.setEndDate(sharedPlan.getEndDate());
         userPlan.setStatus("In Progress");
         userPlan.setShared(false);
+        userPlan.setImageUrl(sharedPlan.getImageUrl());
         
         List<LearningPlanModel.Topic> userTopics = sharedPlan.getTopics().stream()
                 .map(topic -> {
@@ -133,6 +151,17 @@ public class LearningPlanService {
         userPlan.setTopics(userTopics);
         
         userPlan.setProgress(0);
+
+        // Update the shared plan's enrolled users
+        List<String> enrolledUsers = sharedPlan.getEnrolledUsers();
+        if (!enrolledUsers.contains(userEmail)) {
+            enrolledUsers.add(userEmail);
+            sharedPlan.setEnrolledUsers(enrolledUsers);
+            // Save the shared plan first to ensure the enrolled users are updated
+            learningPlanRepository.save(sharedPlan);
+        }
+
+        // Save and return the user's new plan
         return learningPlanRepository.save(userPlan);
     }
 

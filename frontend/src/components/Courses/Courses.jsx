@@ -32,8 +32,28 @@ const Courses = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Fetch shared plans with their enrolled users
         const plans = await learningPlanService.getSharedPlans();
-        setSharedPlans(Array.isArray(plans) ? plans : []);
+        
+        // Ensure each plan has enrolledUsers array and fetch the latest count
+        const plansWithEnrolledUsers = await Promise.all(plans.map(async (plan) => {
+          try {
+            // Get the latest plan data to ensure we have the current enrolled users count
+            const latestPlan = await learningPlanService.getPlanById(plan.id);
+            return {
+              ...plan,
+              enrolledUsers: latestPlan.enrolledUsers || []
+            };
+          } catch (error) {
+            console.error(`Error fetching latest data for plan ${plan.id}:`, error);
+            return {
+              ...plan,
+              enrolledUsers: plan.enrolledUsers || []
+            };
+          }
+        }));
+
+        setSharedPlans(plansWithEnrolledUsers);
 
         // Load user progress for each plan
         if (user?.email) {
@@ -125,17 +145,25 @@ const Courses = () => {
         return;
       }
 
+      // Start the learning plan for the user - this creates a new plan for the user
       const progress = await learningPlanService.startLearningPlan(user.email, planId);
+      
+      // Update user progress
       setUserProgress(prev => ({
         ...prev,
         [planId]: progress
       }));
 
+      // Update the shared plan's enrolled users count in the UI
       setSharedPlans(prev => prev.map(plan =>
         plan.id === planId
-          ? { ...plan, status: 'In Progress' }
+          ? {
+              ...plan,
+              enrolledUsers: [...(plan.enrolledUsers || []), user.email]
+            }
           : plan
       ));
+
     } catch (error) {
       console.error('Error starting learning plan:', error);
       setErrors(prev => ({
