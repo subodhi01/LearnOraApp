@@ -426,6 +426,15 @@ const Courses = () => {
               className="course-card"
               data-course-id={plan.id}
             >
+              <div className="course-image">
+                <img 
+                  src={plan.imageUrl || '/images/default-plan.jpg'} 
+                  alt={plan.title}
+                  onError={(e) => {
+                    e.target.src = '/images/default-plan.jpg';
+                  }}
+                />
+              </div>
               <div className="course-header">
                 <h3>{plan.title}</h3>
                 <span className="course-creator">
@@ -436,15 +445,26 @@ const Courses = () => {
               <div className="course-content">
                 <p className="course-description">{plan.description}</p>
                 <div className="course-meta">
-                  <span className="course-topics">
-                    {plan.topics?.length || 0} Topics
-                  </span>
-                  <span className="course-status">
+                  <div className="course-stats">
+                    <span className="stat-item">
+                      <i className="fas fa-book"></i>
+                      {plan.topics?.length || 0} Topics
+                    </span>
+                    <span className="stat-item">
+                      <i className="fas fa-users"></i>
+                      {plan.enrolledUsers?.length || 0} Learners
+                    </span>
+                    <span className="stat-item">
+                      <i className="fas fa-calendar"></i>
+                      {new Date(plan.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="course-status">
                     Status: {userProgress[plan.id]?.status || plan.status}
-                  </span>
-                  <span className="course-progress">
+                  </div>
+                  <div className="course-progress">
                     Progress: {calculateProgress(userProgress[plan.id] || plan)}%
-                  </span>
+                  </div>
                 </div>
                 <div className="course-timeline">
                   <span>Start: {new Date(plan.startDate).toLocaleDateString()}</span>
@@ -492,7 +512,6 @@ const Courses = () => {
                   contentType="COURSE"
                   reactions={reactions}
                   userReactions={userReactions}
- CENT
                   onReaction={handleReaction}
                   error={reactionError}
                 />
