@@ -2,8 +2,9 @@ package com.learnora.backend.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 
 @Document(collection = "posts")
 public class Post {
@@ -11,13 +12,18 @@ public class Post {
     private String id;
     private String title;
     private String content;
-    private UserModel user;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String userId;
+    private String userEmail;
+    private String userPhotoURL;
+    private List<String> video;
+    private int likes;
     private List<CommentModel> comments;
+    private Date created;
 
     public Post() {
-        this.createdAt = LocalDateTime.now();
+        this.created = new Date();
+        this.likes = 0;
+        this.comments = new ArrayList<>();
     }
 
     // Getters and Setters
@@ -45,28 +51,44 @@ public class Post {
         this.content = content;
     }
 
-    public UserModel getUser() {
-        return user;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUser(UserModel user) {
-        this.user = user;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public String getUserEmail() {
+        return userEmail;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public String getUserPhotoURL() {
+        return userPhotoURL;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setUserPhotoURL(String userPhotoURL) {
+        this.userPhotoURL = userPhotoURL;
+    }
+
+    public List<String> getVideo() {
+        return video;
+    }
+
+    public void setVideo(List<String> video) {
+        this.video = video;
+    }
+
+    public int getLikes() {
+        return likes;
+    }
+
+    public void setLikes(int likes) {
+        this.likes = likes;
     }
 
     public List<CommentModel> getComments() {
@@ -75,5 +97,13 @@ public class Post {
 
     public void setComments(List<CommentModel> comments) {
         this.comments = comments;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 } 

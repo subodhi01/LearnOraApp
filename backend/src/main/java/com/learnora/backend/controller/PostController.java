@@ -4,6 +4,7 @@ import com.learnora.backend.model.Post;
 import com.learnora.backend.model.CommentModel;
 import com.learnora.backend.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -11,56 +12,69 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/posts")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE}, allowedHeaders = "*")
+@RequestMapping("/api")
 public class PostController {
     
     @Autowired
     private PostService postService;
     
-    @PostMapping
-    public ResponseEntity<Post> createPost(@RequestBody Post post, Authentication authentication) {
-        String email = authentication.getName();
-        return ResponseEntity.ok(postService.createPost(post, email));
+    @PostMapping("/create")
+    public ResponseEntity<Post> addPost(@RequestBody Post post) {
+        Post createdPost = postService.addPost(post);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }
     
-    @GetMapping
+    @GetMapping("/Get")
     public ResponseEntity<List<Post>> getAllPosts() {
-        return ResponseEntity.ok(postService.getAllPosts());
+        List<Post> posts = postService.getAllPosts();
+        return ResponseEntity.ok(posts);
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<Post> getPostById(@PathVariable String id) {
-        return postService.getPostById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/{postUId}")
+    public ResponseEntity<List<Post>> getPostsByPostUId(@PathVariable String postUId) {
+        List<Post> posts = postService.getPostsByPostUId(postUId);
+        if (!posts.isEmpty()) {
+            return ResponseEntity.ok(posts);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
     
-    @PutMapping("/{id}")
-    public ResponseEntity<Post> updatePost(@PathVariable String id, @RequestBody Post post, Authentication authentication) {
-        try {
-            String email = authentication.getName();
-            Post updatedPost = postService.updatePost(id, post, email);
+    @PutMapping("/update/{postId}")
+    public ResponseEntity<Post> updatePost(@PathVariable String postId, @RequestBody Post post) {
+        Post updatedPost = postService.updatePost(postId, post);
+        if (updatedPost != null) {
             return ResponseEntity.ok(updatedPost);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        } else {
+            return ResponseEntity.notFound().build();
         }
     }
     
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePost(@PathVariable String id, Authentication authentication) {
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deletePost(@PathVariable("id") String id) {
         try {
-            String email = authentication.getName();
-            postService.deletePost(id, email);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            postService.deletePost(id);
+            return ResponseEntity.ok("Delete successful for ID: " + id);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to delete post with ID: " + id + " due to: " + e.getMessage());
         }
     }
     
-    @GetMapping("/user/{email}")
-    public ResponseEntity<List<Post>> getPostsByUserEmail(@PathVariable String email) {
-        return ResponseEntity.ok(postService.getPostsByUserEmail(email));
+    @PutMapping("/like/{postId}")
+    public ResponseEntity<Post> likePost(@PathVariable String postId) {
+        Post updatedPost = postService.likePost(postId);
+        if (updatedPost != null) {
+            return ResponseEntity.ok(updatedPost);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @DeleteMapping("/AllDelete")
+    public ResponseEntity<Void> deleteAllPosts() {
+        postService.deleteAllPosts();
+        return ResponseEntity.noContent().build();
     }
     
     @PostMapping("/{postId}/comments")

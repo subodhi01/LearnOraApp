@@ -14,12 +14,12 @@ const Header = () => {
     try {
       // Handle both types of logout
       if (user) {
-        logout();
+    logout();
       }
       if (currentUser) {
         await firebaseLogout();
       }
-      navigate('/login');
+    navigate('/login');
     } catch (error) {
       console.error('Failed to log out:', error);
     }
