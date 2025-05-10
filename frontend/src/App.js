@@ -14,7 +14,7 @@ import LearningPlan from './components/LearningPlan/LearningPlan';
 import Courses from './components/Courses/Courses';
 import ProgressTemplate from './components/ProgressTemplate/ProgressTemplate';
 import Resources from './components/Resources/Resources';
-import Community from './components/Community';
+import Community from './components/Community/Community';
 import './App.css';
 
 // Add Font Awesome
