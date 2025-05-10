@@ -111,19 +111,16 @@ public class LearningPlanService {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String currentUserEmail = auth.getName();
             
-            // Get all shared plans
+            if (currentUserEmail == null || currentUserEmail.isEmpty()) {
+                throw new Exception("User must be logged in to view shared plans");
+            }
+            
+            // Get all shared plans without any filtering
             List<LearningPlanModel> allSharedPlans = learningPlanRepository.findByShared(true);
+            System.out.println("Service: Found " + allSharedPlans.size() + " total shared plans");
             
-            // Filter plans to only include those created by the current user or shared with them
-            List<LearningPlanModel> filteredPlans = allSharedPlans.stream()
-                .filter(plan -> 
-                    plan.getUserEmail().equals(currentUserEmail) || // Plan created by current user
-                    (plan.getEnrolledUsers() != null && plan.getEnrolledUsers().contains(currentUserEmail)) // Plan shared with current user
-                )
-                .collect(Collectors.toList());
-            
-            System.out.println("Service: Found " + filteredPlans.size() + " shared plans for user " + currentUserEmail);
-            return filteredPlans;
+            // Return all shared plans for any logged-in user
+            return allSharedPlans;
         } catch (Exception e) {
             System.err.println("Service error in getSharedPlans: " + e.getMessage());
             e.printStackTrace();

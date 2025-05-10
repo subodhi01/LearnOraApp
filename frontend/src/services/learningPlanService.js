@@ -121,18 +121,26 @@ const learningPlanService = {
 
   getSharedPlans: async () => {
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.token) {
+        throw new LearningPlanError('Please log in to view shared plans', 401);
+      }
+
       console.log('Fetching shared learning plans from:', `${API_URL}/shared`);
       const response = await axios.get(`${API_URL}/shared`, {
         headers: {
-          ...getAuthHeaders(),
+          'Authorization': `Bearer ${user.token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
       });
-      console.log('Shared plans response:', response);
+      console.log('Shared plans response:', response.data);
       return response.data || [];
     } catch (error) {
       console.error('Error fetching shared plans:', error);
+      if (error.response?.status === 401) {
+        throw new LearningPlanError('Please log in to view shared plans', 401);
+      }
       throw new LearningPlanError(
         error.response?.data || 'Failed to fetch shared plans',
         error.response?.status
