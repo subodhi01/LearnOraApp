@@ -410,33 +410,40 @@ const Courses = () => {
         return;
       }
 
+      // If clicking the same reaction type that's already active, remove it
       if (currentReaction === reactionType) {
         await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
         setUserReactions(prev => ({
           ...prev,
           [planId]: null
         }));
+        // Update reaction counts after removal
+        const updatedCounts = await reactionService.getReactionCounts('COURSE', planId);
         setReactions(prev => ({
           ...prev,
-          [planId]: {
-            likes: prev[planId].likes - (reactionType === 'LIKE' ? 1 : 0),
-            dislikes: prev[planId].dislikes - (reactionType === 'DISLIKE' ? 1 : 0)
-          }
+          [planId]: updatedCounts
         }));
-      } else {
-        await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
-        setUserReactions(prev => ({
-          ...prev,
-          [planId]: reactionType
-        }));
-        setReactions(prev => ({
-          ...prev,
-          [planId]: {
-            likes: prev[planId].likes + (reactionType === 'LIKE' ? 1 : 0) - (currentReaction === 'LIKE' ? 1 : 0),
-            dislikes: prev[planId].dislikes + (reactionType === 'DISLIKE' ? 1 : 0) - (currentReaction === 'DISLIKE' ? 1 : 0)
-          }
-        }));
+        return;
       }
+
+      // If user has a different reaction, remove it first
+      if (currentReaction) {
+        await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
+      }
+
+      // Add the new reaction
+      await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
+      setUserReactions(prev => ({
+        ...prev,
+        [planId]: reactionType
+      }));
+
+      // Update reaction counts after adding new reaction
+      const updatedCounts = await reactionService.getReactionCounts('COURSE', planId);
+      setReactions(prev => ({
+        ...prev,
+        [planId]: updatedCounts
+      }));
     } catch (error) {
       console.error('Error handling reaction:', error);
       if (error.message === 'Authentication required') {
