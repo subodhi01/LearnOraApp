@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './Course.css';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const CourseCard = ({ course, onEdit, onDelete, onView }) => {

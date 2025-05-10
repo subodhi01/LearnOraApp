@@ -1,105 +1,103 @@
-import React, { useState, useRef } from 'react';
-import { storage, db } from '../services/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import React, { useState } from 'react';
+import { storage, db } from '../firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import './CommunityPost.css';
 
 const CommunityPost = () => {
-  const [content, setContent] = useState('');
-  const [mediaFile, setMediaFile] = useState(null);
-  const [mediaType, setMediaType] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef();
-  const { user, currentUser } = useAuth();
-  const isAuthenticated = user || currentUser;
+  const [file, setFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const { currentUser } = useAuth();
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.type.startsWith('image/')) {
-        setMediaType('image');
-      } else if (file.type.startsWith('video/')) {
-        if (file.size > 30 * 1024 * 1024) { // 30MB limit
-          alert('Video must be less than 30 seconds long');
-          return;
-        }
-        setMediaType('video');
-      }
-      setMediaFile(file);
+    if (e.target.files[0]) {
+      setFile(e.target.files[0]);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      alert('Please login to post');
-      return;
-    }
+    if (!file) return;
 
     try {
-      setIsUploading(true);
-      let mediaUrl = '';
+      // Create a storage reference
+      const storageRef = ref(storage, `community/${Date.now()}_${file.name}`);
+      
+      // Create file metadata including the content type
+      const metadata = {
+        contentType: file.type
+      };
 
-      if (mediaFile) {
-        const storageRef = ref(storage, `community/${Date.now()}_${mediaFile.name}`);
-        await uploadBytes(storageRef, mediaFile);
-        mediaUrl = await getDownloadURL(storageRef);
-      }
+      // Upload file and metadata
+      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
-      await addDoc(collection(db, 'communityPosts'), {
-        content,
-        mediaUrl,
-        mediaType,
-        userId: currentUser?.uid || user?.email,
-        userName: currentUser?.displayName || `${user?.firstName} ${user?.lastName}` || 'Anonymous',
-        createdAt: serverTimestamp(),
-      });
+      // Listen for state changes, errors, and completion of the upload
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Get task progress
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          // Handle errors
+          setError(error.message);
+          console.error('Upload error:', error);
+        },
+        async () => {
+          // Upload completed successfully
+          try {
+            // Get download URL
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            
+            // Add post to Firestore
+            await addDoc(collection(db, 'posts'), {
+              fileUrl: downloadURL,
+              fileName: file.name,
+              fileType: file.type,
+              uploadedBy: currentUser.email,
+              timestamp: serverTimestamp()
+            });
 
-      setContent('');
-      setMediaFile(null);
-      setMediaType(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+            // Reset form
+            setFile(null);
+            setUploadProgress(0);
+            setError(null);
+          } catch (error) {
+            setError('Error saving post: ' + error.message);
+            console.error('Error saving post:', error);
+          }
+        }
+      );
     } catch (error) {
-      console.error('Error posting:', error);
-      alert('Error creating post');
-    } finally {
-      setIsUploading(false);
+      setError('Error starting upload: ' + error.message);
+      console.error('Error starting upload:', error);
     }
   };
 
   return (
-    <div className="community-post-container">
-      <form onSubmit={handleSubmit}>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Share your thoughts..."
-          required
+    <div className="community-post">
+      <h2>Share with Community</h2>
+      <form onSubmit={handleUpload}>
+        <input
+          type="file"
+          onChange={handleFileChange}
+          accept="video/*,image/*"
         />
-        <div className="media-upload">
-          <input
-            type="file"
-            accept="image/*,video/*"
-            onChange={handleFileChange}
-            ref={fileInputRef}
-          />
-          {mediaFile && (
-            <div className="media-preview">
-              {mediaType === 'image' ? (
-                <img src={URL.createObjectURL(mediaFile)} alt="Preview" />
-              ) : (
-                <video src={URL.createObjectURL(mediaFile)} controls />
-              )}
-            </div>
-          )}
-        </div>
-        <button type="submit" disabled={isUploading}>
-          {isUploading ? 'Posting...' : 'Post'}
+        <button type="submit" disabled={!file || uploadProgress > 0}>
+          {uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : 'Upload'}
         </button>
       </form>
+      {error && <p className="error">{error}</p>}
+      {uploadProgress > 0 && (
+        <div className="progress-bar">
+          <div 
+            className="progress" 
+            style={{ width: `${uploadProgress}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../services/firebase';
+import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import './CommunityFeed.css';
 
