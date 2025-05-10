@@ -1,9 +1,19 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { auth } from '../services/firebase';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const validateToken = (token) => {
     try {
@@ -40,6 +50,16 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Firebase auth state observer
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
   const login = (userData) => {
     console.log('Setting user data:', userData);
     console.log('Token present:', !!userData.token);
@@ -57,9 +77,35 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  // Firebase authentication methods
+  const signup = (email, password, displayName) => {
+    return createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        return updateProfile(userCredential.user, { displayName });
+      });
+  };
+
+  const firebaseLogin = (email, password) => {
+    return signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const firebaseLogout = () => {
+    return signOut(auth);
+  };
+
+  const value = {
+    user,
+    currentUser,
+    login,
+    logout,
+    signup,
+    firebaseLogin,
+    firebaseLogout
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

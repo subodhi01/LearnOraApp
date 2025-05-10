@@ -1,13 +1,14 @@
 .community-container {
     max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 20px;
+    margin: 0 auto;
+    padding: 2rem;
   }
   
   .community-container h1 {
-    font-size: 32px;
     color: #333;
-    margin-bottom: 10px;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    text-align: center;
   }
   
   .community-container .subtitle {
@@ -180,4 +181,25 @@
   .edit-comment-buttons {
     display: flex;
     gap: 10px;
+  }
+  
+  /* Add some spacing between components */
+  .community-post-container {
+    margin-bottom: 2rem;
+  }
+  
+  .community-feed {
+    margin-top: 2rem;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .community-container {
+      padding: 1rem;
+    }
+  
+    .community-container h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
   }

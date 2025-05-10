@@ -14,6 +14,7 @@ import LearningPlan from './components/LearningPlan/LearningPlan';
 import Courses from './components/Courses/Courses';
 import ProgressTemplate from './components/ProgressTemplate/ProgressTemplate';
 import Resources from './components/Resources/Resources';
+import Community from './components/Community';
 import './App.css';
 
 // Add Font Awesome
@@ -136,6 +137,7 @@ function App() {
                       <Resources />
                     </ProtectedRoute>
                   } />
+                  <Route path="/community" element={<Community />} />
                 </Routes>
               </main>
               <Footer />

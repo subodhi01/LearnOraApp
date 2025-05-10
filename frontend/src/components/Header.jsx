@@ -6,13 +6,23 @@ import './Header.css';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, currentUser, logout, firebaseLogout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Handle both types of logout
+      if (user) {
+        logout();
+      }
+      if (currentUser) {
+        await firebaseLogout();
+      }
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -28,6 +38,9 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Check if user is authenticated through either method
+  const isAuthenticated = user || currentUser;
 
   return (
     <header className="header">
@@ -62,7 +75,7 @@ const Header = () => {
         </nav>
 
         <div className="auth-section">
-          {user ? (
+          {isAuthenticated ? (
             <div className="user-section">
               <NotificationBell />
               <div className="user-menu" ref={dropdownRef}>
@@ -70,12 +83,22 @@ const Header = () => {
                   className="user-avatar"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  {user ? 
+                    `${user.firstName?.[0]}${user.lastName?.[0]}` :
+                    currentUser?.displayName?.[0] || currentUser?.email?.[0]
+                  }
                 </div>
                 <div className={`user-dropdown ${isDropdownOpen ? 'show' : ''}`}>
                   <div className="user-info">
-                    <span className="user-name">{user?.firstName} {user?.lastName}</span>
-                    <span className="user-email">{user?.email}</span>
+                    <span className="user-name">
+                      {user ? 
+                        `${user.firstName} ${user.lastName}` :
+                        currentUser?.displayName || 'User'
+                      }
+                    </span>
+                    <span className="user-email">
+                      {user ? user.email : currentUser?.email}
+                    </span>
                   </div>
                   <div className="dropdown-menu">
                     <Link to="/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
