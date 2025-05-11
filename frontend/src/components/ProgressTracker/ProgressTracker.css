@@ -31,7 +31,7 @@
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
 .progress-tracker-card:hover {
@@ -46,6 +46,9 @@
   font-size: 1.3rem;
   color: #333;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .course-name {
@@ -345,4 +348,50 @@
 
 .close-modal-btn:hover {
   background: #475569;
-} 
+}
+
+/* New styles for completed courses */
+.completed-card {
+  background-color: #e6f4e6; /* Light green background for completed courses */
+}
+
+.completion-message {
+  text-align: center;
+  font-weight: 600;
+  color: #2e7d32; /* Dark green for emphasis */
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 12px;
+  background: #f0fdf4; /* Slightly lighter green background */
+  border-radius: 6px;
+}
+
+.golden-badge {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-color: #ffd700; /* Gold color */
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  border-radius: 2px;
+}
+
+.delete-btn {
+  background: #dc2626; /* Red for delete */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.delete-btn:hover {
+  background: #b91c1c; /* Darker red on hover */
+}
+
+.card-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
