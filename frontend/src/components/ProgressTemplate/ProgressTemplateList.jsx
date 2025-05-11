@@ -18,8 +18,7 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
           <div className="progress-template-card">
             <div className="template-header">
               <div className="template-title">
-                <h4>{template.learningPlanName || 'Untitled Template'}</h4>
-                <span className="template-subtitle">Course: {template.courseName || 'Unknown Course'}</span>
+                <h4 className="template-subtitle">{template.courseName || 'Unknown Course'}</h4>
               </div>
               <div className="template-actions">
                 <button onClick={() => onEdit(template)}>Edit</button>

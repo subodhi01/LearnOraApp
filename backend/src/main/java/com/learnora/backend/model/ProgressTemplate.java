@@ -11,6 +11,7 @@ public class ProgressTemplate {
     private String id;
     private String userId;
     private String courseId;
+    private String courseName;
     private String learningPlanId;
     private List<TopicProgress> topics;
     private List<CustomItem> customItems;
@@ -68,7 +69,9 @@ public class ProgressTemplate {
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     public String getCourseId() { return courseId; }
+    public String getCourseName() { return courseName; }
     public void setCourseId(String courseId) { this.courseId = courseId; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
     public String getLearningPlanId() { return learningPlanId; }
     public void setLearningPlanId(String learningPlanId) { this.learningPlanId = learningPlanId; }
     public List<TopicProgress> getTopics() { return topics; }

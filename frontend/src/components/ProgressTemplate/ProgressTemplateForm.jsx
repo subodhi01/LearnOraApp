@@ -206,10 +206,13 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     e.preventDefault();
     if (!selectedCourse) return;
 
+    // Find the selected course from the courses array
+    const selectedCourseData = courses.find(course => course.id === selectedCourse);
+
     const templateData = {
       userId: user.email,
       learningPlanId: selectedCourse,
-      courseName: selectedCourseDetails?.title || 'Unknown Course',
+      courseName: selectedCourseData?.title || selectedCourseDetails?.title || 'Unknown Course',
       calculationMethod: calculationMethod,
       topics: topics.map(topic => ({
         topicId: topic.title,
