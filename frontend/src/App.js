@@ -130,9 +130,7 @@ function App() {
                     <Route path="progress-tracker" element={<ProgressTracker />} />
                     <Route path="my-posts" element={<MyPosts />} />
                     <Route path="meeting" element={<HomePage />} />
-                    
                   </Route>
-                  <Route path="/meeting" element={<HomePage />} />
                   <Route path="/meeting/:roomId" element={<MeetingRoom />} />
                   <Route path="/learning-plans" element={
                     <ProtectedRoute>

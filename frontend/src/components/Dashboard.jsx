@@ -68,11 +68,11 @@ const Dashboard = () => {
             My Posts
           </Link>
           <Link 
-            to="/dashboard/progressstarted" 
-            className={`nav-item ${location.pathname === '/dashboard/progressstarted' ? 'active' : ''}`}
+            to="/dashboard/meeting" 
+            className={`nav-item ${location.pathname === '/dashboard/meeting' ? 'active' : ''}`}
           >
-            <i className="fas fa-chart-line"></i>
-            Progress
+            <i className="fas fa-video"></i>
+            Meeting
           </Link>
           <Link 
             to="/dashboard/progress-templates" 
