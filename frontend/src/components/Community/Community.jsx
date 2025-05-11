@@ -69,6 +69,7 @@ const Community = () => {
             id: doc.id,
             ...doc.data()
           }));
+          console.log('Fetched posts:', postsData); // Debug log
           setPosts(postsData);
           setError(null);
         },
