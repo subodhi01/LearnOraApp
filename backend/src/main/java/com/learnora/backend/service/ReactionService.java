@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Optional;
 
 @Service
 public class ReactionService {
@@ -28,18 +29,47 @@ public class ReactionService {
         logger.info("Adding reaction: userId={}, contentId={}, contentType={}, reactionType={}, username={}", 
             userId, contentId, contentType, reactionType, username);
 
-        ReactionModel existingReaction = reactionRepository.findByUserAndContent(userId, contentId, contentType)
-            .orElse(null);
-
-        if (existingReaction != null) {
-            if (existingReaction.getReactionType().equals(reactionType)) {
-                reactionRepository.delete(existingReaction);
+        // Check if user already has a reaction
+        Optional<ReactionModel> existingReaction = reactionRepository.findByUserAndContent(userId, contentId, contentType);
+        
+        if (existingReaction.isPresent()) {
+            ReactionModel reaction = existingReaction.get();
+            
+            // If clicking the same reaction type, remove it
+            if (reaction.getReactionType().equals(reactionType)) {
+                reactionRepository.delete(reaction);
                 logger.info("Removed existing reaction of same type");
+                
+                try {
+                    if (contentType.equals("COURSE")) {
+                        var plan = learningPlanRepository.findById(contentId)
+                            .orElseThrow(() -> new RuntimeException("Course not found"));
+                        
+                        if (!plan.getUserEmail().equals(userId)) {
+                            String message = String.format("%s removed their %s from your course '%s'", 
+                                username, 
+                                reactionType.equals("LIKE") ? "like" : "dislike",
+                                plan.getTitle());
+                            
+                            notificationService.createNotification(
+                                plan.getUserEmail(),
+                                "REACTION_REMOVED",
+                                message,
+                                contentId,
+                                contentId
+                            );
+                            logger.info("Created notification for reaction removal");
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to create notification for reaction removal: {}", e.getMessage());
+                }
             } else {
-                existingReaction.setReactionType(reactionType);
-                reactionRepository.save(existingReaction);
+                // If different reaction type, update the existing reaction
+                reaction.setReactionType(reactionType);
+                reactionRepository.save(reaction);
                 logger.info("Updated existing reaction to new type");
-
+                
                 try {
                     if (contentType.equals("COURSE")) {
                         var plan = learningPlanRepository.findById(contentId)
@@ -66,10 +96,11 @@ public class ReactionService {
                 }
             }
         } else {
+            // Create new reaction if user doesn't have one
             ReactionModel newReaction = new ReactionModel(userId, contentId, contentType, reactionType);
             reactionRepository.save(newReaction);
             logger.info("Created new reaction");
-
+            
             try {
                 if (contentType.equals("COURSE")) {
                     var plan = learningPlanRepository.findById(contentId)

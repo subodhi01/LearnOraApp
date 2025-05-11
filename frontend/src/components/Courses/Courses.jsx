@@ -32,8 +32,27 @@ const Courses = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setLoading(true);
+        setErrors({});
+        
+        if (!user || !user.token) {
+          setErrors({ general: 'Please log in to view shared plans' });
+          setLoading(false);
+          return;
+        }
+
+        console.log('Fetching shared plans...');
+        
         // Fetch shared plans with their enrolled users
         const plans = await learningPlanService.getSharedPlans();
+        console.log('Received shared plans:', plans);
+        
+        if (!plans || plans.length === 0) {
+          console.log('No shared plans found');
+          setSharedPlans([]);
+          setLoading(false);
+          return;
+        }
         
         // Ensure each plan has enrolledUsers array and fetch the latest count
         const plansWithEnrolledUsers = await Promise.all(plans.map(async (plan) => {
@@ -53,22 +72,25 @@ const Courses = () => {
           }
         }));
 
+        console.log('Processed shared plans:', plansWithEnrolledUsers);
         setSharedPlans(plansWithEnrolledUsers);
 
         // Load user progress for each plan
-        if (user?.email) {
-          const progressPromises = plans.map(plan =>
-            learningPlanService.getUserProgress(user.email, plan.id).catch(() => null)
-          );
-          const progressResults = await Promise.all(progressPromises);
-          const progressMap = {};
-          progressResults.forEach((progress, index) => {
-            if (progress) {
-              progressMap[plans[index].id] = progress;
-            }
-          });
-          setUserProgress(progressMap);
-        }
+        const progressPromises = plans.map(plan =>
+          learningPlanService.getUserProgress(user.email, plan.id)
+            .catch(error => {
+              console.error(`Error fetching progress for plan ${plan.id}:`, error);
+              return null;
+            })
+        );
+        const progressResults = await Promise.all(progressPromises);
+        const progressMap = {};
+        progressResults.forEach((progress, index) => {
+          if (progress) {
+            progressMap[plans[index].id] = progress;
+          }
+        });
+        setUserProgress(progressMap);
 
         // Load comments for all plans
         for (const plan of plans) {
@@ -388,33 +410,40 @@ const Courses = () => {
         return;
       }
 
+      // If clicking the same reaction type that's already active, remove it
       if (currentReaction === reactionType) {
         await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
         setUserReactions(prev => ({
           ...prev,
           [planId]: null
         }));
+        // Update reaction counts after removal
+        const updatedCounts = await reactionService.getReactionCounts('COURSE', planId);
         setReactions(prev => ({
           ...prev,
-          [planId]: {
-            likes: prev[planId].likes - (reactionType === 'LIKE' ? 1 : 0),
-            dislikes: prev[planId].dislikes - (reactionType === 'DISLIKE' ? 1 : 0)
-          }
+          [planId]: updatedCounts
         }));
-      } else {
-        await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
-        setUserReactions(prev => ({
-          ...prev,
-          [planId]: reactionType
-        }));
-        setReactions(prev => ({
-          ...prev,
-          [planId]: {
-            likes: prev[planId].likes + (reactionType === 'LIKE' ? 1 : 0) - (currentReaction === 'LIKE' ? 1 : 0),
-            dislikes: prev[planId].dislikes + (reactionType === 'DISLIKE' ? 1 : 0) - (currentReaction === 'DISLIKE' ? 1 : 0)
-          }
-        }));
+        return;
       }
+
+      // If user has a different reaction, remove it first
+      if (currentReaction) {
+        await reactionService.removeReaction('COURSE', planId, user.email, `${user.firstName} ${user.lastName}`);
+      }
+
+      // Add the new reaction
+      await reactionService.addReaction('COURSE', planId, user.email, reactionType, `${user.firstName} ${user.lastName}`);
+      setUserReactions(prev => ({
+        ...prev,
+        [planId]: reactionType
+      }));
+
+      // Update reaction counts after adding new reaction
+      const updatedCounts = await reactionService.getReactionCounts('COURSE', planId);
+      setReactions(prev => ({
+        ...prev,
+        [planId]: updatedCounts
+      }));
     } catch (error) {
       console.error('Error handling reaction:', error);
       if (error.message === 'Authentication required') {
