@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
+import moment from 'moment';
 import './MyPosts.css';
 
 const MyPosts = () => {
@@ -20,7 +21,6 @@ const MyPosts = () => {
 
     const q = query(
       collection(db, 'communityPosts'),
-      where('userEmail', '==', user.email),
       orderBy('createdAt', 'desc')
     );
 
@@ -29,6 +29,7 @@ const MyPosts = () => {
         id: doc.id,
         ...doc.data()
       }));
+      console.log('Fetched posts:', postsData); // Debug log
       setPosts(postsData);
       setLoading(false);
     }, (error) => {
@@ -53,7 +54,7 @@ const MyPosts = () => {
       const postRef = doc(db, 'communityPosts', postId);
       await updateDoc(postRef, {
         content: editContent,
-        editedAt: new Date()
+        editedAt: serverTimestamp()
       });
 
       setPosts(posts.map(post => {
@@ -106,6 +107,29 @@ const MyPosts = () => {
       setError('Failed to delete post. Please try again.');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    try {
+      // Handle Firestore Timestamp
+      if (timestamp.toDate) {
+        return moment(timestamp.toDate()).format('YYYY-MM-DD HH:mm');
+      }
+      // Handle regular Date object
+      if (timestamp instanceof Date) {
+        return moment(timestamp).format('YYYY-MM-DD HH:mm');
+      }
+      // Handle timestamp number
+      if (typeof timestamp === 'number') {
+        return moment(timestamp).format('YYYY-MM-DD HH:mm');
+      }
+      // Handle string date
+      return moment(timestamp).format('YYYY-MM-DD HH:mm');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
     }
   };
 
@@ -195,7 +219,7 @@ const MyPosts = () => {
                 )}
                 <div className="post-meta">
                   <span className="post-date">
-                    {new Date(post.createdAt?.toDate()).toLocaleDateString()}
+                    {formatDate(post.createdAt)}
                     {post.editedAt && ' (edited)'}
                   </span>
                   <div className="post-stats">

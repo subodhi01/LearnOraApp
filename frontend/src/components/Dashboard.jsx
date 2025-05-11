@@ -57,9 +57,6 @@ const Dashboard = () => {
             <i className="fas fa-book"></i>
             My Courses
           </Link>
-
-        
-
           <Link 
             to="/dashboard/my-posts" 
             className={`nav-item ${location.pathname === '/dashboard/my-posts' ? 'active' : ''}`}
@@ -80,13 +77,6 @@ const Dashboard = () => {
           >
             <i className="fas fa-tasks"></i>
             Progress Templates
-          </Link>
-          <Link 
-            to="/dashboard/progress-tracker" 
-            className={`nav-item ${location.pathname === '/dashboard/progress-tracker' ? 'active' : ''}`}
-          >
-            <i className="fas fa-chart-line"></i>
-            Progress Tracker
           </Link>
           <Link 
             to="/dashboard/certificates" 
