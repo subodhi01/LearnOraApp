@@ -26,7 +26,15 @@ const Dashboard = () => {
       <div className="dashboard-sidebar">
         <div className="user-profile">
           <div className="user-avatar">
-            {user?.firstName?.[0]?.toUpperCase() || 'U'}
+            {user?.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt={`${user.firstName} ${user.lastName}`}
+                className="profile-photo"
+              />
+            ) : (
+              user?.firstName?.[0]?.toUpperCase() || 'U'
+            )}
           </div>
           <div className="user-info">
             <h3>{user?.firstName} {user?.lastName}</h3>
@@ -48,6 +56,13 @@ const Dashboard = () => {
           >
             <i className="fas fa-book"></i>
             My Courses
+          </Link>
+          <Link 
+            to="/dashboard/my-posts" 
+            className={`nav-item ${location.pathname === '/dashboard/my-posts' ? 'active' : ''}`}
+          >
+            <i className="fas fa-pencil-alt"></i>
+            My Posts
           </Link>
           <Link 
             to="/dashboard/progressstarted" 

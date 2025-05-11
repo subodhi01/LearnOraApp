@@ -1,0 +1,127 @@
+.community-post-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.community-post-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.community-post-container textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  font-size: 16px;
+}
+
+.media-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.media-upload input[type="file"] {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.media-preview {
+  max-width: 100%;
+  margin-top: 10px;
+}
+
+.media-preview img,
+.media-preview video {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 4px;
+}
+
+.community-post-container button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.community-post-container button:hover {
+  background-color: #0056b3;
+}
+
+.community-post-container button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.community-post {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.community-post h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.community-post input[type="file"] {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.community-post button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.community-post button:hover {
+  background-color: #0056b3;
+}
+
+.community-post button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #dc3545;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress {
+  height: 100%;
+  background-color: #28a745;
+  transition: width 0.3s ease;
+} 

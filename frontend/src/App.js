@@ -14,6 +14,8 @@ import LearningPlan from './components/LearningPlan/LearningPlan';
 import Courses from './components/Courses/Courses';
 import ProgressTemplate from './components/ProgressTemplate/ProgressTemplate';
 import Resources from './components/Resources/Resources';
+import Community from './components/Community/Community';
+import MyPosts from './components/Dashboard/MyPosts';
 import './App.css';
 
 // Add Font Awesome
@@ -120,6 +122,7 @@ function App() {
                     <Route path="settings" element={<Settings />} />
                     <Route path="progress" element={<ProgressTemplate />} />
                     <Route path="progress-templates" element={<ProgressTemplate />} />
+                    <Route path="my-posts" element={<MyPosts />} />
                   </Route>
                   <Route path="/learning-plans" element={
                     <ProtectedRoute>
@@ -136,6 +139,7 @@ function App() {
                       <Resources />
                     </ProtectedRoute>
                   } />
+                  <Route path="/community" element={<Community />} />
                 </Routes>
               </main>
               <Footer />

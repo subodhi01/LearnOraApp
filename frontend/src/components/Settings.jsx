@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile, updateUserProfile, changePassword, deleteUserProfile } from '../services/userService';
 import { useNavigate } from 'react-router-dom';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './Settings.css';
 import axios from 'axios';
 import { getAuthHeaders } from '../services/authService';
@@ -18,13 +20,16 @@ const Settings = () => {
   const [success, setSuccess] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form states
   const [profileForm, setProfileForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    phone: '',
+    photoURL: ''
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -52,8 +57,10 @@ const Settings = () => {
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
-        phone: userData.phone || ''
+        phone: userData.phone || '',
+        photoURL: userData.photoURL || ''
       });
+      setProfileImage(userData.photoURL);
       setError(null);
     } catch (err) {
       console.error('Error fetching profile:', err); // Debug error
@@ -130,6 +137,66 @@ const Settings = () => {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      // Upload image to Firebase Storage
+      const storageRef = ref(storage, `profile_images/${authUser.email}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Update profile with new image URL
+      const updatedProfile = {
+        ...profileForm,
+        photoURL: downloadURL
+      };
+
+      // Update backend profile
+      await updateUserProfile(updatedProfile);
+      
+      // Update local state
+      setProfileForm(updatedProfile);
+      setProfileImage(downloadURL);
+      
+      // Update user in localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user'));
+      const updatedUserData = {
+        ...currentUser,
+        photoURL: downloadURL
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUserData));
+
+      setSuccess('Profile image updated successfully');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError('Failed to upload profile image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   if (!authUser) {
     return <div className="settings-container">Please log in to view your settings.</div>;
   }
@@ -177,8 +244,29 @@ const Settings = () => {
       <div className="settings-content">
         {activeTab === 'account' && (
           <div className="account-details">
-            <div className="account-avatar">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            <div className="account-avatar-container">
+              {profileImage || user?.photoURL ? (
+                <img 
+                  src={profileImage || user?.photoURL} 
+                  alt="Profile" 
+                  className="account-avatar-image"
+                />
+              ) : (
+                <div className="account-avatar">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+              )}
+              <div className="avatar-upload">
+                <label className="upload-image-btn">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                  {uploadingImage ? 'Uploading...' : 'Change Photo'}
+                </label>
+              </div>
             </div>
             <div className="account-info">
               <div className="info-group">
