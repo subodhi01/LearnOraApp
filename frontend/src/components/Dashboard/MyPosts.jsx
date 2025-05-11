@@ -21,6 +21,7 @@ const MyPosts = () => {
 
     const q = query(
       collection(db, 'communityPosts'),
+      where('userEmail', '==', user.email),
       orderBy('createdAt', 'desc')
     );
 
