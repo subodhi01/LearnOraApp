@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './ProgressTemplate.css';
 import './ProgressTemplatelist.css';
 
 const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState(null);
+
+  const handleDeleteClick = (templateId) => {
+    setTemplateToDelete(templateId);
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (templateToDelete) {
+      onDelete(templateToDelete);
+    }
+    setShowConfirm(false);
+    setTemplateToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setShowConfirm(false);
+    setTemplateToDelete(null);
+  };
+
   if (!templates || templates.length === 0) {
     return (
       <div className="progress-template-empty">
@@ -22,7 +43,7 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
               </div>
               <div className="template-actions">
                 <button onClick={() => onEdit(template)}>Edit</button>
-                <button onClick={() => onDelete(template.id)}>Delete</button>
+                <button onClick={() => handleDeleteClick(template.id)}>Delete</button>
               </div>
             </div>
 
@@ -46,26 +67,27 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
                         </div>
 
                         {/* Learning Targets under this topic */}
-                        {template.customItems && template.customItems
-                          .filter(item => item.topicId === topic.topicId)
-                          .map((item, index) => (
-                            <div key={index} className="learning-target-item">
-                              <div className="target-header">
-                                <span>{item.name}</span>
-                                <div className="progress-info">
-                                  <span className="percentage-label">
-                                    {item.percentage?.toFixed(1)}%
-                                  </span>
-                                  {item.currentProgress > 0 && (
-                                    <span className="tracking-indicator">●</span>
-                                  )}
+                        {template.customItems &&
+                          template.customItems
+                            .filter((item) => item.topicId === topic.topicId)
+                            .map((item, index) => (
+                              <div key={index} className="learning-target-item">
+                                <div className="target-header">
+                                  <span>{item.name}</span>
+                                  <div className="progress-info">
+                                    <span className="percentage-label">
+                                      {item.percentage?.toFixed(1)}%
+                                    </span>
+                                    {item.currentProgress > 0 && (
+                                      <span className="tracking-indicator">●</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="target-date">
+                                  Finish by: {new Date(item.finishDate).toLocaleDateString()}
                                 </div>
                               </div>
-                              <div className="target-date">
-                                Finish by: {new Date(item.finishDate).toLocaleDateString()}
-                              </div>
-                            </div>
-                          ))}
+                            ))}
                       </div>
                     ))}
                   </div>
@@ -84,6 +106,19 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
           </div>
         </div>
       ))}
+
+      {/* Confirmation Dialog */}
+      {showConfirm && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-box">
+            <p>Are you sure you want to delete this template?</p>
+            <div className="confirmation-actions">
+              <button onClick={confirmDelete}>Confirm</button>
+              <button onClick={cancelDelete}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
