@@ -13,7 +13,8 @@ import {
   arrayUnion, 
   increment,
   getFirestore,
-  enableIndexedDbPersistence
+  enableIndexedDbPersistence,
+  deleteDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import moment from 'moment';
@@ -35,6 +36,8 @@ const Community = () => {
     'Career Advice',
     'Tech News'
   ]);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editContent, setEditContent] = useState('');
 
   // Enable offline persistence
   useEffect(() => {
@@ -183,6 +186,45 @@ const Community = () => {
     }
   };
 
+  const handleEditPost = async (postId, currentContent) => {
+    if (!user) {
+      setError('Please sign in to edit posts');
+      return;
+    }
+
+    try {
+      const postRef = doc(db, 'communityPosts', postId);
+      await updateDoc(postRef, {
+        content: editContent,
+        editedAt: serverTimestamp()
+      });
+      setEditingPost(null);
+      setEditContent('');
+    } catch (error) {
+      console.error('Error editing post:', error);
+      setError('Failed to edit post. Please try again.');
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!user) {
+      setError('Please sign in to delete posts');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this post?')) {
+      return;
+    }
+
+    try {
+      const postRef = doc(db, 'communityPosts', postId);
+      await deleteDoc(postRef);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      setError('Failed to delete post. Please try again.');
+    }
+  };
+
   if (!user) {
     return (
       <div className="community-container">
@@ -240,21 +282,72 @@ const Community = () => {
                   <img src={post.userPhotoURL} alt={post.userEmail} />
                   <div className="post-info">
                     <h3>{post.userName}</h3>
-                    <p>{moment(post.createdAt?.toDate()).format('YYYY-MM-DD HH:mm')}</p>
+                    <p>
+                      {moment(post.createdAt?.toDate()).format('YYYY-MM-DD HH:mm')}
+                      {post.editedAt && ' (edited)'}
+                    </p>
                   </div>
+                  {post.userEmail === user?.email && (
+                    <div className="post-actions-menu">
+                      <button 
+                        onClick={() => {
+                          setEditingPost(post.id);
+                          setEditContent(post.content);
+                        }}
+                        className="edit-btn"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeletePost(post.id)}
+                        className="delete-btn"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="post-content">
-                  <p className="text-sm text-blue-700 font-medium">#post #popular</p>
-                  <p>{post.content}</p>
-                  {post.mediaType === 'image' && post.mediaUrl && (
-                    <img src={post.mediaUrl} alt="Post media" className="mt-4 rounded-xl w-full h-80 object-cover" />
-                  )}
-                  {post.mediaType === 'video' && post.mediaUrl && (
-                    <video controls className="mt-4 rounded-xl w-full h-80 object-cover">
-                      <source src={post.mediaUrl} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
+                  {editingPost === post.id ? (
+                    <div className="edit-post-form">
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="edit-textarea"
+                      />
+                      <div className="edit-actions">
+                        <button 
+                          onClick={() => handleEditPost(post.id, post.content)}
+                          className="save-btn"
+                        >
+                          Save
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setEditingPost(null);
+                            setEditContent('');
+                          }}
+                          className="cancel-btn"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-blue-700 font-medium">#post #popular</p>
+                      <p>{post.content}</p>
+                      {post.mediaType === 'image' && post.mediaUrl && (
+                        <img src={post.mediaUrl} alt="Post media" className="mt-4 rounded-xl w-full h-80 object-cover" />
+                      )}
+                      {post.mediaType === 'video' && post.mediaUrl && (
+                        <video controls className="mt-4 rounded-xl w-full h-80 object-cover">
+                          <source src={post.mediaUrl} type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
+                      )}
+                    </>
                   )}
                 </div>
 
