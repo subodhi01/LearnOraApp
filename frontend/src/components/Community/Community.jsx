@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../firebase';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, arrayUnion, increment } from 'firebase/firestore';
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  serverTimestamp, 
+  updateDoc, 
+  doc, 
+  arrayUnion, 
+  increment,
+  getFirestore,
+  enableIndexedDbPersistence
+} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import moment from 'moment';
 import './Community.css';
 
 const Community = () => {
-  const { user } = useAuth();
+  const { user, currentUser } = useAuth();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [mediaFile, setMediaFile] = useState(null);
@@ -23,11 +36,27 @@ const Community = () => {
     'Tech News'
   ]);
 
+  // Enable offline persistence
   useEffect(() => {
-    if (!user) return;
+    const enablePersistence = async () => {
+      try {
+        await enableIndexedDbPersistence(getFirestore());
+        console.log('Offline persistence enabled');
+      } catch (error) {
+        console.error('Error enabling offline persistence:', error);
+      }
+    };
+    enablePersistence();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      console.log('No user found in auth state');
+      return;
+    }
 
     try {
-      const q = query(collection(db, 'posts'), orderBy('created', 'desc'));
+      const q = query(collection(db, 'communityPosts'), orderBy('createdAt', 'desc'));
       const unsubscribe = onSnapshot(q, 
         (snapshot) => {
           const postsData = snapshot.docs.map(doc => ({
@@ -79,7 +108,7 @@ const Community = () => {
     try {
       let mediaUrl = '';
       if (mediaFile) {
-        const storageRef = ref(storage, `posts/${Date.now()}_${mediaFile.name}`);
+        const storageRef = ref(storage, `community/${Date.now()}_${mediaFile.name}`);
         await uploadBytes(storageRef, mediaFile);
         mediaUrl = await getDownloadURL(storageRef);
       }
@@ -87,21 +116,18 @@ const Community = () => {
       const postData = {
         title: newPost.substring(0, 50) + (newPost.length > 50 ? '...' : ''),
         content: newPost,
-        video: mediaUrl ? [mediaUrl] : [],
-        userId: user.email || '',
+        mediaUrl: mediaUrl,
+        mediaType: mediaUrl ? (mediaUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? 'image' : 'video') : null,
+        userName: user.email || '',
         userEmail: user.email || '',
         userPhotoURL: user.photoURL || 'https://via.placeholder.com/40',
-        created: serverTimestamp(),
+        createdAt: serverTimestamp(),
         likes: 0,
         comments: []
       };
 
-      // Validate required fields
-      if (!postData.userEmail) {
-        throw new Error('User email is missing');
-      }
-
-      await addDoc(collection(db, 'posts'), postData);
+      const docRef = await addDoc(collection(db, 'communityPosts'), postData);
+      console.log('Post created with ID:', docRef.id);
 
       setNewPost('');
       setMediaFile(null);
@@ -120,7 +146,7 @@ const Community = () => {
     }
 
     try {
-      const postRef = doc(db, 'posts', postId);
+      const postRef = doc(db, 'communityPosts', postId);
       await updateDoc(postRef, {
         likes: increment(1)
       });
@@ -139,7 +165,7 @@ const Community = () => {
     if (!commentText.trim()) return;
 
     try {
-      const postRef = doc(db, 'posts', postId);
+      const postRef = doc(db, 'communityPosts', postId);
       await updateDoc(postRef, {
         comments: arrayUnion({
           userId: user.email || '',
@@ -213,23 +239,22 @@ const Community = () => {
                 <div className="post-header">
                   <img src={post.userPhotoURL} alt={post.userEmail} />
                   <div className="post-info">
-                    <h3>{post.userEmail}</h3>
-                    <p>{moment(post.created?.toDate()).format('YYYY-MM-DD HH:mm')}</p>
+                    <h3>{post.userName}</h3>
+                    <p>{moment(post.createdAt?.toDate()).format('YYYY-MM-DD HH:mm')}</p>
                   </div>
                 </div>
 
                 <div className="post-content">
                   <p className="text-sm text-blue-700 font-medium">#post #popular</p>
                   <p>{post.content}</p>
-                  {post.video && post.video.length > 0 && (
-                    post.video[0].match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                      <img src={post.video[0]} alt="Post media" />
-                    ) : (
-                      <video controls className="mt-4 rounded-xl w-full h-80 object-cover">
-                        <source src={post.video[0]} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    )
+                  {post.mediaType === 'image' && post.mediaUrl && (
+                    <img src={post.mediaUrl} alt="Post media" className="mt-4 rounded-xl w-full h-80 object-cover" />
+                  )}
+                  {post.mediaType === 'video' && post.mediaUrl && (
+                    <video controls className="mt-4 rounded-xl w-full h-80 object-cover">
+                      <source src={post.mediaUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
                   )}
                 </div>
 

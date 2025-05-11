@@ -52,12 +52,15 @@ const CommunityPost = () => {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             
             // Add post to Firestore
-            await addDoc(collection(db, 'posts'), {
+            await addDoc(collection(db, 'communityPosts'), {
               fileUrl: downloadURL,
               fileName: file.name,
               fileType: file.type,
-              uploadedBy: currentUser.email,
-              timestamp: serverTimestamp()
+              userName: currentUser.email,
+              createdAt: serverTimestamp(),
+              mediaUrl: downloadURL,
+              mediaType: file.type.startsWith('video/') ? 'video' : 'image',
+              content: ''
             });
 
             // Reset form
