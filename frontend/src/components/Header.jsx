@@ -64,10 +64,6 @@ const Header = () => {
             <i className="fas fa-tasks"></i>
             <span>Learning Plans</span>
           </Link>
-          <Link to="/resources" className="nav-item">
-            <i className="fas fa-bookmark"></i>
-            <span>Resources</span>
-          </Link>
           <Link to="/community" className="nav-item">
             <i className="fas fa-users"></i>
             <span>Community</span>
