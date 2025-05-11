@@ -209,18 +209,20 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     const templateData = {
       userId: user.email,
       learningPlanId: selectedCourse,
-  /* add*/   courseName: selectedCourseDetails?.title || 'Unknown Course',
+      courseName: selectedCourseDetails?.title || 'Unknown Course',
       calculationMethod: calculationMethod,
       topics: topics.map(topic => ({
         topicId: topic.title,
         topicName: topic.title,
-        currentProgress: template?.topics.find(t => t.topicId === topic.title)?.currentProgress || 0
+        currentProgress: template?.topics?.find(t => t.topicId === topic.title)?.currentProgress || 0,
+        percentage: topicPercentages[topic.title] || 0
       })),
       customItems: customItems.map(item => ({
         name: item.name,
         currentProgress: item.currentProgress || 0,
         finishDate: item.finishDate,
-        topicId: item.topicId
+        topicId: item.topicId,
+        percentage: targetPercentages[item.name] || 0
       }))
     };
 
@@ -229,7 +231,19 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
       if (template) {
         await progressTemplateService.updateTemplate(template.id, templateData);
       } else {
-        await progressTemplateService.createTemplate(templateData);
+        // For new templates, set initial progress to 1% to make them appear in Progress Tracker
+        const newTemplateData = {
+          ...templateData,
+          topics: templateData.topics.map(topic => ({
+            ...topic,
+            currentProgress: 1 // Set initial progress to 1%
+          })),
+          customItems: templateData.customItems.map(item => ({
+            ...item,
+            currentProgress: 1 // Set initial progress to 1%
+          }))
+        };
+        await progressTemplateService.createTemplate(newTemplateData);
       }
       onSubmit(templateData);
     } catch (err) {

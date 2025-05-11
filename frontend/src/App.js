@@ -13,6 +13,7 @@ import Settings from './components/Settings';
 import LearningPlan from './components/LearningPlan/LearningPlan';
 import Courses from './components/Courses/Courses';
 import ProgressTemplate from './components/ProgressTemplate/ProgressTemplate';
+import ProgressTracker from './components/ProgressTracker/ProgressTracker';
 import Resources from './components/Resources/Resources';
 import './App.css';
 
@@ -120,6 +121,7 @@ function App() {
                     <Route path="settings" element={<Settings />} />
                     <Route path="progress" element={<ProgressTemplate />} />
                     <Route path="progress-templates" element={<ProgressTemplate />} />
+                    <Route path="progress-tracker" element={<ProgressTracker />} />
                   </Route>
                   <Route path="/learning-plans" element={
                     <ProtectedRoute>

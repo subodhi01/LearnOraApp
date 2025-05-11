@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './LearningPlan.css';
+import learningPlanService from '../../services/learningPlanService';
 
 const calculateProgress = (plan) => {
   if (!plan.topics || plan.topics.length === 0) return 0;
@@ -10,10 +11,24 @@ const calculateProgress = (plan) => {
 const LearningPlanList = ({ 
   plans, 
   onEditPlan, 
-  onDeletePlan
+  onDeletePlan,
+  onUpdatePlanProgress
 }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  const handleStartLearning = async (plan) => {
+    try {
+      await learningPlanService.startLearningPlan(plan.userEmail, plan.id);
+      const updatedPlan = {
+        ...plan,
+        status: 'IN_PROGRESS'
+      };
+      onUpdatePlanProgress(updatedPlan);
+    } catch (error) {
+      console.error('Error starting learning plan:', error);
+    }
+  };
 
   const handleViewPlan = (plan) => {
     setSelectedPlan(plan);
@@ -158,6 +173,14 @@ const LearningPlanList = ({
         <div className="plan-header">
           <h3>{plan.title}</h3>
           <div className="plan-actions">
+            {plan.status === 'NOT_STARTED' && (
+              <button 
+                className="action-btn start"
+                onClick={() => handleStartLearning(plan)}
+              >
+                Start Learning
+              </button>
+            )}
             <button 
               className="action-btn edit"
               onClick={() => onEditPlan(plan)}

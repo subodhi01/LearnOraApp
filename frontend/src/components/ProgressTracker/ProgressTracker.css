@@ -1,0 +1,136 @@
+.progress-tracker-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.progress-tracker-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.progress-tracker-header h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.progress-tracker-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.progress-tracker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.progress-tracker-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: transform 0.2s ease;
+}
+
+.progress-tracker-card:hover {
+  transform: translateY(-5px);
+}
+
+.tracker-card-header {
+  margin-bottom: 1.5rem;
+}
+
+.tracker-card-header h3 {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.course-name {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.topic-progress {
+  margin-bottom: 1.5rem;
+}
+
+.topic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.topic-header h4 {
+  font-size: 1rem;
+  color: #444;
+  margin: 0;
+}
+
+.progress-percentage {
+  font-weight: bold;
+  color: #2196f3;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2196f3;
+  transition: width 0.3s ease;
+}
+
+.progress-slider {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.tracker-card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.total-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.total-percentage {
+  font-weight: bold;
+  color: #2196f3;
+}
+
+.last-updated {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.progress-tracker-loading,
+.progress-tracker-error,
+.progress-tracker-empty {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.progress-tracker-error {
+  color: #f44336;
+}
+
+.progress-tracker-empty {
+  color: #666;
+} 
