@@ -13,6 +13,7 @@ public class UserModel {
     private String email;
     private String password;
     private String phone;
+    private String photoURL;
 
     public UserModel() {}
 
@@ -69,5 +70,13 @@ public class UserModel {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getPhotoURL() {
+        return photoURL;
+    }
+
+    public void setPhotoURL(String photoURL) {
+        this.photoURL = photoURL;
     }
 }
