@@ -108,6 +108,7 @@ const CommentItem = React.forwardRef(({
   handleCancel,
   contentId
 }, ref) => {
+  const { user } = useAuth();
   const isReplying = replyingTo === comment.id;
   const isEditing = editingComment === comment.id;
   const isReply = level > 0;
@@ -162,7 +163,7 @@ const CommentItem = React.forwardRef(({
               >
                 {isReplying ? 'Cancel Reply' : 'Reply'}
               </button>
-              {isOwner && !isReply && (
+              {isOwner && (
                 <>
                   <button
                     className="edit-button"
@@ -224,7 +225,7 @@ const CommentItem = React.forwardRef(({
               onEdit={onEdit}
               onDelete={onDelete}
               onToggleVisibility={onToggleVisibility}
-              isOwner={isOwner}
+              isOwner={user && reply.userId === user.email}
               isContentOwner={isContentOwner}
               onUpdateComment={onUpdateComment}
               replyingTo={replyingTo}
