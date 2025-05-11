@@ -59,6 +59,7 @@ public class UserService {
             response.put("firstName", user.getFirstName());
             response.put("lastName", user.getLastName());
             response.put("email", user.getEmail());
+            response.put("photoURL", user.getPhotoURL());
             response.put("token", token);
             return response;
         } catch (Exception e) {
@@ -81,12 +82,14 @@ public class UserService {
             String email = payload.getEmail();
             String firstName = (String) payload.get("given_name");
             String lastName = (String) payload.get("family_name");
+            String photoURL = (String) payload.get("picture");
 
             UserModel user = userRepository.findByEmail(email).orElseGet(() -> {
                 UserModel newUser = new UserModel();
                 newUser.setEmail(email);
                 newUser.setFirstName(firstName);
                 newUser.setLastName(lastName);
+                newUser.setPhotoURL(photoURL);
                 newUser.setPassword(passwordEncoder.encode("google-auth-" + email));
                 return userRepository.save(newUser);
             });
@@ -97,6 +100,7 @@ public class UserService {
             response.put("firstName", user.getFirstName());
             response.put("lastName", user.getLastName());
             response.put("email", user.getEmail());
+            response.put("photoURL", user.getPhotoURL());
             response.put("token", token);
             return response;
         } catch (Exception e) {
@@ -121,6 +125,9 @@ public class UserService {
         }
         if (updates.getPhone() != null) {
             user.setPhone(updates.getPhone());
+        }
+        if (updates.getPhotoURL() != null) {
+            user.setPhotoURL(updates.getPhotoURL());
         }
         
         return userRepository.save(user);

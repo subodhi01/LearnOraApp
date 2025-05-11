@@ -52,7 +52,8 @@ export const updateUserProfile = async (profileData) => {
     const updateData = {
       firstName: profileData.firstName,
       lastName: profileData.lastName,
-      phone: profileData.phone || ''
+      phone: profileData.phone || '',
+      photoURL: profileData.photoURL || ''
     };
 
     console.log('Sending update data:', updateData);
@@ -69,7 +70,8 @@ export const updateUserProfile = async (profileData) => {
       ...currentUser,
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
-      phone: updatedUser.phone || ''
+      phone: updatedUser.phone || '',
+      photoURL: updatedUser.photoURL || ''
     };
 
     localStorage.setItem('user', JSON.stringify(updatedUserData));

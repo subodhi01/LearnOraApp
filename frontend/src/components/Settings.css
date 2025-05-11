@@ -56,17 +56,66 @@
   align-items: flex-start;
 }
 
+.account-avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1rem;
+}
+
 .account-avatar {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   background-color: #007bff;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.account-avatar-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #007bff;
+  transition: all 0.3s ease;
+}
+
+.avatar-upload {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 0;
+  border-bottom-left-radius: 60px;
+  border-bottom-right-radius: 60px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.account-avatar-container:hover .avatar-upload {
+  opacity: 1;
+}
+
+.upload-image-btn {
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.upload-image-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .account-info {
