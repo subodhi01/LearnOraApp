@@ -36,16 +36,14 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
                       <div key={topic.topicId} className="progress-item">
                         <div className="progress-item-header">
                           <h6>{topic.topicName}</h6>
-                          <span className="percentage-label">
-                            {topic.percentage?.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{ width: `${topic.currentProgress}%` }}
-                          />
-                          <span className="progress-text">{topic.currentProgress}%</span>
+                          <div className="progress-info">
+                            <span className="percentage-label">
+                              {topic.percentage?.toFixed(1)}%
+                            </span>
+                            {topic.currentProgress > 0 && (
+                              <span className="tracking-indicator">●</span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Learning Targets under this topic */}
@@ -55,16 +53,14 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
                             <div key={index} className="learning-target-item">
                               <div className="target-header">
                                 <span>{item.name}</span>
-                                <span className="percentage-label">
-                                  {item.percentage?.toFixed(1)}%
-                                </span>
-                              </div>
-                              <div className="progress-bar">
-                                <div
-                                  className="progress-fill"
-                                  style={{ width: `${item.currentProgress}%` }}
-                                />
-                                <span className="progress-text">{item.currentProgress}%</span>
+                                <div className="progress-info">
+                                  <span className="percentage-label">
+                                    {item.percentage?.toFixed(1)}%
+                                  </span>
+                                  {item.currentProgress > 0 && (
+                                    <span className="tracking-indicator">●</span>
+                                  )}
+                                </div>
                               </div>
                               <div className="target-date">
                                 Finish by: {new Date(item.finishDate).toLocaleDateString()}

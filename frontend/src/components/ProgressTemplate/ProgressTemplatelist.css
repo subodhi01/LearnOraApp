@@ -298,4 +298,41 @@ se.progress-template-list {
     justify-content: center;
     padding: 10px 20px;
   }
+}
+
+.progress-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.percentage-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.tracking-indicator {
+  color: #4CAF50;
+  font-size: 1.2em;
+}
+
+.progress-item-header,
+.target-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.learning-target-item {
+  margin-left: 16px;
+  padding: 8px 0;
+  border-left: 2px solid #eee;
+  padding-left: 12px;
+}
+
+.target-date {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 4px;
 } 
