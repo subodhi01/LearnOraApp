@@ -26,7 +26,15 @@ const Dashboard = () => {
       <div className="dashboard-sidebar">
         <div className="user-profile">
           <div className="user-avatar">
-            {user?.firstName?.[0]?.toUpperCase() || 'U'}
+            {user?.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt={`${user.firstName} ${user.lastName}`}
+                className="profile-photo"
+              />
+            ) : (
+              user?.firstName?.[0]?.toUpperCase() || 'U'
+            )}
           </div>
           <div className="user-info">
             <h3>{user?.firstName} {user?.lastName}</h3>

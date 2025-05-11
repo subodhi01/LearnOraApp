@@ -83,10 +83,17 @@ const Header = () => {
                   className="user-avatar"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
-                  {user ? 
-                    `${user.firstName?.[0]}${user.lastName?.[0]}` :
-                    currentUser?.displayName?.[0] || currentUser?.email?.[0]
-                  }
+                  {user?.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt={`${user.firstName} ${user.lastName}`}
+                      className="profile-photo"
+                    />
+                  ) : (
+                    user ? 
+                      `${user.firstName?.[0]}${user.lastName?.[0]}` :
+                      currentUser?.displayName?.[0] || currentUser?.email?.[0]
+                  )}
                 </div>
                 <div className={`user-dropdown ${isDropdownOpen ? 'show' : ''}`}>
                   <div className="user-info">
