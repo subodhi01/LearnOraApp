@@ -85,6 +85,28 @@ const Community = () => {
     }
   }, [user]);
 
+  // Function to get user's display name
+  const getUserDisplayName = (user) => {
+    if (!user) return 'Anonymous';
+    
+    // If user has displayName, use it
+    if (user.displayName) {
+      return user.displayName;
+    }
+    
+    // If user has firstName and lastName in custom claims or metadata
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    
+    // Fallback to email username (part before @)
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    
+    return 'Anonymous';
+  };
+
   const handleMediaUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -159,7 +181,7 @@ const Community = () => {
         content: newPost,
         mediaUrl: mediaUrl,
         mediaType: mediaType,
-        userName: user.email || '',
+        userName: getUserDisplayName(user),
         userEmail: user.email || '',
         userPhotoURL: user.photoURL || 'https://via.placeholder.com/40',
         createdAt: serverTimestamp(),
@@ -172,6 +194,11 @@ const Community = () => {
 
       setNewPost('');
       setMediaFile(null);
+      setSuccessMessage('Post created successfully!');
+      
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (error) {
       console.error('Error creating post:', error);
       setError(error.message || 'Failed to create post. Please try again.');
@@ -210,6 +237,7 @@ const Community = () => {
       await updateDoc(postRef, {
         comments: arrayUnion({
           userId: user.email || '',
+          userName: getUserDisplayName(user),
           userEmail: user.email || '',
           userPhotoURL: user.photoURL || 'https://via.placeholder.com/40',
           comment: commentText,
@@ -381,7 +409,7 @@ const Community = () => {
             {posts.map((post) => (
               <div key={post.id} className="post-card">
                 <div className="post-header">
-                  <img src={post.userPhotoURL} alt={post.userEmail} />
+                  <img src={post.userPhotoURL} alt={post.userName} />
                   <div className="post-info">
                     <h3>{post.userName}</h3>
                     <p>
