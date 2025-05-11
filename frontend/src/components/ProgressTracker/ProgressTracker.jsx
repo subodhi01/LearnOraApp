@@ -216,6 +216,7 @@ const ProgressTracker = () => {
                   )}
                   {template.topics?.map((topic) => {
                     const topicProgress = calculateTopicProgress(topic.topicId, template);
+                    console.log(`Topic ${topic.topicId} progress:`, topicProgress); // Debug log
                     return (
                       <div key={topic.topicId} className="topic-progress">
                         <div className="topic-header">
@@ -228,7 +229,7 @@ const ProgressTracker = () => {
                           <div 
                             className="progress-fill"
                             style={{ 
-                              width: `${(topicProgress / (topic.percentage || 100)) * 100}%`,
+                              width: `${(topicProgress / 100) * 100}%`, // Simplified to use topicProgress directly
                               backgroundColor: topicProgress > 0 ? '#4CAF50' : '#e2e8f0'
                             }}
                           />
