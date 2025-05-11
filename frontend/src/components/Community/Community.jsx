@@ -27,6 +27,7 @@ const Community = () => {
   const [mediaFile, setMediaFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [trendingTopics] = useState([
@@ -38,6 +39,8 @@ const Community = () => {
   ]);
   const [editingPost, setEditingPost] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Enable offline persistence
   useEffect(() => {
@@ -192,17 +195,42 @@ const Community = () => {
       return;
     }
 
+    setIsUpdating(true);
+    setError(null);
+    setSuccessMessage(null);
+
     try {
       const postRef = doc(db, 'communityPosts', postId);
       await updateDoc(postRef, {
         content: editContent,
         editedAt: serverTimestamp()
       });
+
+      // Update the posts state immediately
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            content: editContent,
+            editedAt: new Date()
+          };
+        }
+        return post;
+      }));
+
       setEditingPost(null);
       setEditContent('');
+      setSuccessMessage('Post updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (error) {
       console.error('Error editing post:', error);
       setError('Failed to edit post. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -216,12 +244,27 @@ const Community = () => {
       return;
     }
 
+    setIsDeleting(true);
+    setError(null);
+    setSuccessMessage(null);
+
     try {
       const postRef = doc(db, 'communityPosts', postId);
       await deleteDoc(postRef);
+      
+      // Update the posts state immediately
+      setPosts(posts.filter(post => post.id !== postId));
+      setSuccessMessage('Post deleted successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (error) {
       console.error('Error deleting post:', error);
       setError('Failed to delete post. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -242,6 +285,9 @@ const Community = () => {
         <h1>Community Hub</h1>
         <p>Connect with fellow learners, share experiences, and grow together</p>
       </div>
+
+      {error && <div className="error-message">{error}</div>}
+      {successMessage && <div className="success-message">{successMessage}</div>}
 
       <div className="community-content">
         <div className="posts-section">
@@ -295,14 +341,16 @@ const Community = () => {
                           setEditContent(post.content);
                         }}
                         className="edit-btn"
+                        disabled={isUpdating}
                       >
-                        ✏️ Edit
+                        {isUpdating && editingPost === post.id ? 'Updating...' : '✏️ Edit'}
                       </button>
                       <button 
                         onClick={() => handleDeletePost(post.id)}
                         className="delete-btn"
+                        disabled={isDeleting}
                       >
-                        🗑️ Delete
+                        {isDeleting && isDeleting === post.id ? 'Deleting...' : '🗑️ Delete'}
                       </button>
                     </div>
                   )}
