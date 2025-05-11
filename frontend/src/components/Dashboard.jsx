@@ -58,6 +58,13 @@ const Dashboard = () => {
             My Courses
           </Link>
           <Link 
+            to="/dashboard/my-posts" 
+            className={`nav-item ${location.pathname === '/dashboard/my-posts' ? 'active' : ''}`}
+          >
+            <i className="fas fa-pencil-alt"></i>
+            My Posts
+          </Link>
+          <Link 
             to="/dashboard/progressstarted" 
             className={`nav-item ${location.pathname === '/dashboard/progressstarted' ? 'active' : ''}`}
           >
