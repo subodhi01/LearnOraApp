@@ -3,6 +3,9 @@ package com.learnora.backend.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Document(collection = "users")
 public class UserModel {
     
@@ -14,6 +17,8 @@ public class UserModel {
     private String password;
     private String phone;
     private String photoURL;
+    private List<String> followers = new ArrayList<>();
+    private List<String> following = new ArrayList<>();
 
     public UserModel() {}
 
@@ -78,5 +83,21 @@ public class UserModel {
 
     public void setPhotoURL(String photoURL) {
         this.photoURL = photoURL;
+    }
+
+    public List<String> getFollowers() {
+        return followers;
+    }
+
+    public void setFollowers(List<String> followers) {
+        this.followers = followers;
+    }
+
+    public List<String> getFollowing() {
+        return following;
+    }
+
+    public void setFollowing(List<String> following) {
+        this.following = following;
     }
 }

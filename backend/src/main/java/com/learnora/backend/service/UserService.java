@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -154,5 +156,56 @@ public class UserService {
         }
         
         userRepository.delete(user);
+    }
+
+    public List<UserModel> getFollowers(String email) {
+        UserModel user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getFollowers().stream()
+            .map(id -> userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Follower not found")))
+            .collect(Collectors.toList());
+    }
+
+    public List<UserModel> getFollowing(String email) {
+        UserModel user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getFollowing().stream()
+            .map(id -> userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Followed user not found")))
+            .collect(Collectors.toList());
+    }
+
+    public void followUser(String followerEmail, String userIdToFollow) {
+        UserModel follower = userRepository.findByEmail(followerEmail)
+            .orElseThrow(() -> new RuntimeException("Follower not found"));
+        UserModel followed = userRepository.findById(userIdToFollow)
+            .orElseThrow(() -> new RuntimeException("User to follow not found"));
+        
+        if (!follower.getFollowing().contains(userIdToFollow)) {
+            follower.getFollowing().add(userIdToFollow);
+            followed.getFollowers().add(follower.getId());
+            userRepository.save(follower);
+            userRepository.save(followed);
+        }
+    }
+
+    public void unfollowUser(String followerEmail, String userIdToUnfollow) {
+        UserModel follower = userRepository.findByEmail(followerEmail)
+            .orElseThrow(() -> new RuntimeException("Follower not found"));
+        UserModel followed = userRepository.findById(userIdToUnfollow)
+            .orElseThrow(() -> new RuntimeException("User to unfollow not found"));
+        
+        follower.getFollowing().remove(userIdToUnfollow);
+        followed.getFollowers().remove(follower.getId());
+        userRepository.save(follower);
+        userRepository.save(followed);
+    }
+
+    public List<UserModel> searchUsers(String username) {
+        return userRepository.findAll().stream()
+            .filter(user -> (user.getFirstName() + " " + user.getLastName())
+                .toLowerCase().contains(username.toLowerCase()))
+            .collect(Collectors.toList());
     }
 }

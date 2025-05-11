@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './Settings.css';
+import './SettingsFollowers.css';
 import axios from 'axios';
 import { getAuthHeaders } from '../services/authService';
 
@@ -22,6 +23,13 @@ const Settings = () => {
   const [deletePassword, setDeletePassword] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  // New states for followers/following
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
 
   // Form states
   const [profileForm, setProfileForm] = useState({
@@ -40,18 +48,15 @@ const Settings = () => {
 
   useEffect(() => {
     if (authUser) {
-    fetchUserProfile();
+      fetchUserProfile();
+      fetchFollowersFollowing();
     }
   }, [authUser]);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      console.log('Fetching profile for user:', authUser); // Debug log
-      
       const userData = await getUserProfile();
-      console.log('User Data:', userData); // Debug log
-      
       setUser(userData);
       setProfileForm({
         firstName: userData.firstName,
@@ -63,10 +68,23 @@ const Settings = () => {
       setProfileImage(userData.photoURL);
       setError(null);
     } catch (err) {
-      console.error('Error fetching profile:', err); // Debug error
+      console.error('Error fetching profile:', err);
       setError('Failed to load user profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollowersFollowing = async () => {
+    try {
+      const headers = getAuthHeaders();
+      const followersRes = await axios.get(`${API_URL}/users/followers?email=${authUser.email}`, { headers });
+      const followingRes = await axios.get(`${API_URL}/users/following?email=${authUser.email}`, { headers });
+      setFollowers(followersRes.data);
+      setFollowing(followingRes.data);
+    } catch (err) {
+      console.error('Error fetching followers/following:', err);
+      setError('Failed to load followers or following');
     }
   };
 
@@ -116,12 +134,9 @@ const Settings = () => {
       setError('Please enter your password to confirm deletion');
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
-      
-      // Proceed with deletion, passing the password for verification
       await deleteUserProfile(deletePassword);
       logout();
       navigate('/');
@@ -140,52 +155,34 @@ const Settings = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file');
       return;
     }
-
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size should be less than 5MB');
       return;
     }
-
     setUploadingImage(true);
     setError(null);
-
     try {
-      // Upload image to Firebase Storage
       const storageRef = ref(storage, `profile_images/${authUser.email}/${Date.now()}_${file.name}`);
       await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);
-
-      // Update profile with new image URL
       const updatedProfile = {
         ...profileForm,
         photoURL: downloadURL
       };
-
-      // Update backend profile
       await updateUserProfile(updatedProfile);
-      
-      // Update local state
       setProfileForm(updatedProfile);
       setProfileImage(downloadURL);
-      
-      // Update user in localStorage
       const currentUser = JSON.parse(localStorage.getItem('user'));
       const updatedUserData = {
         ...currentUser,
         photoURL: downloadURL
       };
       localStorage.setItem('user', JSON.stringify(updatedUserData));
-
       setSuccess('Profile image updated successfully');
-      
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
@@ -194,6 +191,45 @@ const Settings = () => {
       setError('Failed to upload profile image. Please try again.');
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  const handleFollow = async (userId) => {
+    try {
+      const headers = getAuthHeaders();
+      await axios.post(`${API_URL}/users/follow`, { userId, email: authUser.email }, { headers });
+      await fetchFollowersFollowing();
+      setSuccess('Followed user successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Error following user:', err.response?.data || err.message);
+      setError('Failed to follow user');
+    }
+  };
+
+  const handleUnfollow = async (userId) => {
+    try {
+      const headers = getAuthHeaders();
+      await axios.post(`${API_URL}/users/unfollow`, { userId, email: authUser.email }, { headers });
+      await fetchFollowersFollowing();
+      setSuccess('Unfollowed user successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Error unfollowing user:', err.response?.data || err.message);
+      setError('Failed to unfollow user');
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    try {
+      const headers = getAuthHeaders();
+      const res = await axios.get(`${API_URL}/users/search?username=${searchQuery}`, { headers });
+      setSearchResults(res.data);
+    } catch (err) {
+      console.error('Error searching users:', err);
+      setError('Failed to search users');
     }
   };
 
@@ -267,6 +303,20 @@ const Settings = () => {
                   {uploadingImage ? 'Uploading...' : 'Change Photo'}
                 </label>
               </div>
+              <div className="followers-following">
+                <button
+                  className="followers-count"
+                  onClick={() => setShowFollowersModal(true)}
+                >
+                  Followers: {followers.length}
+                </button>
+                <button
+                  className="following-count"
+                  onClick={() => setShowFollowingModal(true)}
+                >
+                  Following: {following.length}
+                </button>
+              </div>
             </div>
             <div className="account-info">
               <div className="info-group">
@@ -281,6 +331,46 @@ const Settings = () => {
                 <label>Phone</label>
                 <p>{user?.phone ? user.phone : 'Not set'}</p>
               </div>
+            </div>
+            <div className="search-users-section">
+              <h3>Search Users to Follow</h3>
+              <form className="search-users-form" onSubmit={handleSearch}>
+                <div className="search-form-group">
+                  <input
+                    type="text"
+                    placeholder="Search by username"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button type="submit" className="search-users-button">
+                    Search
+                  </button>
+                </div>
+              </form>
+              {searchResults.length > 0 && (
+                <div className="search-results">
+                  {searchResults.map((result) => (
+                    <div key={result.id} className="search-result-item">
+                      <span>{result.firstName} {result.lastName} ({result.email})</span>
+                      {following.some((f) => f.id === result.id) ? (
+                        <button
+                          className="unfollow-button"
+                          onClick={() => handleUnfollow(result.id)}
+                        >
+                          Unfollow
+                        </button>
+                      ) : (
+                        <button
+                          className="follow-button"
+                          onClick={() => handleFollow(result.id)}
+                        >
+                          Follow
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -369,7 +459,6 @@ const Settings = () => {
             <p className="warning-text">
               Warning: This action cannot be undone. All your data will be permanently deleted.
             </p>
-            
             {!showDeleteConfirm ? (
               <button
                 className="delete-account-button"
@@ -411,9 +500,61 @@ const Settings = () => {
             )}
           </div>
         )}
+
+        {/* Followers Modal */}
+        {showFollowersModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3>Followers</h3>
+              <button className="modal-close" onClick={() => setShowFollowersModal(false)}>
+                ×
+              </button>
+              <div className="modal-list">
+                {followers.length > 0 ? (
+                  followers.map((follower) => (
+                    <div key={follower.id} className="modal-list-item">
+                      <span>{follower.firstName} {follower.lastName} ({follower.email})</span>
+                    </div>
+                  ))
+                ) : (
+                  <p>No followers yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Following Modal */}
+        {showFollowingModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3>Following</h3>
+              <button className="modal-close" onClick={() => setShowFollowingModal(false)}>
+                ×
+              </button>
+              <div className="modal-list">
+                {following.length > 0 ? (
+                  following.map((followed) => (
+                    <div key={followed.id} className="modal-list-item">
+                      <span>{followed.firstName} {followed.lastName} ({followed.email})</span>
+                      <button
+                        className="unfollow-button"
+                        onClick={() => handleUnfollow(followed.id)}
+                      >
+                        Unfollow
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p>Not following anyone yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Settings; 
+export default Settings;
