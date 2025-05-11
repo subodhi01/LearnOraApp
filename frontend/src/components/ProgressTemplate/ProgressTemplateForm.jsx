@@ -209,6 +209,7 @@ const ProgressTemplateForm = ({ template, onSubmit, onCancel }) => {
     const templateData = {
       userId: user.email,
       learningPlanId: selectedCourse,
+  /* add*/   courseName: selectedCourseDetails?.title || 'Unknown Course',
       calculationMethod: calculationMethod,
       topics: topics.map(topic => ({
         topicId: topic.title,

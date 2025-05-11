@@ -470,4 +470,62 @@
   color: #666;
   font-size: 1rem;
   line-height: 1.4;
+}
+
+/* Template Header */ 
+
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.template-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.template-title h4 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.template-subtitle {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.template-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.template-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.template-actions button:first-child {
+  background-color: #007bff;
+  color: white;
+}
+
+.template-actions button:last-child {
+  background-color: #dc3545;
+  color: white;
+}
+
+.template-actions button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 } 

@@ -17,7 +17,10 @@ const ProgressTemplateList = ({ templates, onEdit, onDelete }) => {
         <div key={template.id} className="template-card-wrapper">
           <div className="progress-template-card">
             <div className="template-header">
-              <h4>{template.learningPlanName || 'Untitled Template'}</h4>
+              <div className="template-title">
+                <h4>{template.learningPlanName || 'Untitled Template'}</h4>
+                <span className="template-subtitle">Course: {template.courseName || 'Unknown Course'}</span>
+              </div>
               <div className="template-actions">
                 <button onClick={() => onEdit(template)}>Edit</button>
                 <button onClick={() => onDelete(template.id)}>Delete</button>
