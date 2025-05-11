@@ -88,12 +88,38 @@ const Community = () => {
   const handleMediaUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
         setError('File size should be less than 10MB');
         return;
       }
-      setMediaFile(file);
-      setError(null);
+
+      // Check file type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        setError('Please upload only images or videos');
+        return;
+      }
+
+      // Additional validation for videos
+      if (isVideo) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.onloadedmetadata = () => {
+          if (video.duration > 300) { // 5 minutes limit
+            setError('Video duration should be less than 5 minutes');
+            return;
+          }
+          setMediaFile(file);
+          setError(null);
+        };
+        video.src = URL.createObjectURL(file);
+      } else {
+        setMediaFile(file);
+        setError(null);
+      }
     }
   };
 
@@ -113,17 +139,26 @@ const Community = () => {
 
     try {
       let mediaUrl = '';
+      let mediaType = null;
+
       if (mediaFile) {
         const storageRef = ref(storage, `community/${Date.now()}_${mediaFile.name}`);
         await uploadBytes(storageRef, mediaFile);
         mediaUrl = await getDownloadURL(storageRef);
+        
+        // Properly detect media type
+        if (mediaFile.type.startsWith('image/')) {
+          mediaType = 'image';
+        } else if (mediaFile.type.startsWith('video/')) {
+          mediaType = 'video';
+        }
       }
 
       const postData = {
         title: newPost.substring(0, 50) + (newPost.length > 50 ? '...' : ''),
         content: newPost,
         mediaUrl: mediaUrl,
-        mediaType: mediaUrl ? (mediaUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? 'image' : 'video') : null,
+        mediaType: mediaType,
         userName: user.email || '',
         userEmail: user.email || '',
         userPhotoURL: user.photoURL || 'https://via.placeholder.com/40',
@@ -306,7 +341,13 @@ const Community = () => {
                     onChange={handleMediaUpload}
                     style={{ display: 'none' }}
                   />
-                  📷 Upload Media
+                  {mediaFile ? (
+                    <span>
+                      {mediaFile.type.startsWith('image/') ? '📷 Change Image' : '🎥 Change Video'}
+                    </span>
+                  ) : (
+                    <span>📷 Upload Image/Video</span>
+                  )}
                 </label>
                 <button type="submit" className="post-btn" disabled={loading}>
                   {loading ? 'Posting...' : 'Post'}
@@ -314,9 +355,24 @@ const Community = () => {
               </div>
               {error && <p className="error-message">{error}</p>}
               {mediaFile && (
-                <p className="file-info">
-                  Selected file: {mediaFile.name} ({(mediaFile.size / 1024 / 1024).toFixed(2)}MB)
-                </p>
+                <div className="media-preview">
+                  {mediaFile.type.startsWith('image/') ? (
+                    <img 
+                      src={URL.createObjectURL(mediaFile)} 
+                      alt="Preview" 
+                      className="preview-image"
+                    />
+                  ) : (
+                    <video 
+                      src={URL.createObjectURL(mediaFile)} 
+                      controls 
+                      className="preview-video"
+                    />
+                  )}
+                  <p className="file-info">
+                    Selected file: {mediaFile.name} ({(mediaFile.size / 1024 / 1024).toFixed(2)}MB)
+                  </p>
+                </div>
               )}
             </form>
           </div>
@@ -386,14 +442,24 @@ const Community = () => {
                     <>
                       <p className="text-sm text-blue-700 font-medium">#post #popular</p>
                       <p>{post.content}</p>
-                      {post.mediaType === 'image' && post.mediaUrl && (
-                        <img src={post.mediaUrl} alt="Post media" className="mt-4 rounded-xl w-full h-80 object-cover" />
-                      )}
-                      {post.mediaType === 'video' && post.mediaUrl && (
-                        <video controls className="mt-4 rounded-xl w-full h-80 object-cover">
-                          <source src={post.mediaUrl} type="video/mp4" />
-                          Your browser does not support the video tag.
-                        </video>
+                      {post.mediaUrl && (
+                        <div className="media-container">
+                          {post.mediaType === 'image' ? (
+                            <img 
+                              src={post.mediaUrl} 
+                              alt="Post media" 
+                              className="post-media"
+                            />
+                          ) : post.mediaType === 'video' ? (
+                            <video 
+                              controls 
+                              className="post-media"
+                            >
+                              <source src={post.mediaUrl} type="video/mp4" />
+                              Your browser does not support the video tag.
+                            </video>
+                          ) : null}
+                        </div>
                       )}
                     </>
                   )}
