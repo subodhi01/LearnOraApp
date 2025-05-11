@@ -1,7 +1,8 @@
 .followers-following {
     display: flex;
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: -110px;
+    margin-left: 420px;
   }
   
   .followers-count, .following-count {
@@ -71,7 +72,7 @@
   }
   
   .search-users-section {
-    margin-top: 2rem;
+    margin-top: 110px;
   }
   
   .search-users-section h3 {
