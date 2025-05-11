@@ -18,7 +18,11 @@ import Resources from './components/Resources/Resources';
 import Community from './components/Community/Community';
 import MyPosts from './components/Dashboard/MyPosts';
 import './App.css';
-
+import HomePage from './pages/HomePage';
+import MeetingRoom from './pages/MeetingRoom';
+import './styles/components.css';
+import './styles/base.css';
+import './components/utils/localStorageUtils';
 // Add Font Awesome
 const fontAwesome = document.createElement('link');
 fontAwesome.rel = 'stylesheet';
@@ -125,7 +129,11 @@ function App() {
                     <Route path="progress-templates" element={<ProgressTemplate />} />
                     <Route path="progress-tracker" element={<ProgressTracker />} />
                     <Route path="my-posts" element={<MyPosts />} />
+                    <Route path="meeting" element={<HomePage />} />
+                    
                   </Route>
+                  <Route path="/meeting" element={<HomePage />} />
+                  <Route path="/meeting/:roomId" element={<MeetingRoom />} />
                   <Route path="/learning-plans" element={
                     <ProtectedRoute>
                       <LearningPlan />
